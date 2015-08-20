@@ -13,6 +13,11 @@ if (window.location.href.indexOf('#_=_') > 0) {
 	window.location = window.location.href.replace(/#.*/, '');
 }
 
+
+
+
+
+
 /************************ GLOBAL VARIABLES *************************/
 var canvas;
 var bgselected;				// Image ID setter for background
@@ -20,17 +25,25 @@ var fntcolor = '#000000';	// Colour setter for new text
 var blkcolor = '#FFFFFF';	// Colour setter for new block
 var orig;					// Holds last selected/modified object (for clone)
 var atLimit;				// Holds last acceptable position
-var lastSave;				// Holds last save state (for load/revert)
+var lastSave;				// Holds last save state (for undo)
+var currSave;				// Holds current state (for redo)
 var isSaved;				// Counter for whether changes have been made
 var idleTime = 0;			// Counter for number of minutes user is idle
 var idleInterval;			// Holds ID for setInterval() idle timer (for reset)
 
+
+
+
+
+
 /************************ BOARD INITIALISATION *************************/
+// Self Invoking / Init function
 (function() {
   var $ = function(id){return document.getElementById(id)};
 
   canvas = this.__canvas = new fabric.Canvas('canvas', {
-    isDrawingMode: true
+    isDrawingMode: true,
+    selection: false
   });
 
   initEdit();
@@ -327,6 +340,11 @@ function initColPickers(){
 	}).css('background-color', '#ffffff');
 }
 
+
+
+
+
+
 /************************ BOARD EDITOR CONTROLLERS *************************/
 function startIdleListener(){
 	// Increase idle time every minute
@@ -346,6 +364,11 @@ function timerIncrement() {
 function timedOut(afk) {
 
 }
+
+
+
+
+
 
 /************************ BOARD FUNCTIONS *************************/
 function loadCanvas(){
@@ -388,6 +411,11 @@ function clearCanvas(){
 		isSaved = false;
 	}
 }
+
+
+
+
+
 
 /************************ NEW OBJECTS FUNCTIONS *************************/
 function setDefSettings(curr){	// *** consider adding these features to toJSON(options)
@@ -499,6 +527,11 @@ function clearHighlight() {
 	var obj = canvas.getActiveObject();
 	setActiveStyle("textBackgroundColor", 'clear');
 }
+
+
+
+
+
 
 /************************ OBJECT MODIFIERS *************************/
 function cloneActive(){
@@ -719,6 +752,11 @@ function toggleOverline() {
 	setActiveStyle('textDecoration', value);
 }
 
+
+
+
+
+
 /************************ TAB-RELATED *************************/
 function switchTab(){
 	$("#myTab > .active").removeClass("active");
@@ -727,62 +765,17 @@ function switchTab(){
 	$("#modifycurrent").addClass("in active");
 }
 function updateInfoWin(curr){
-	document.getElementById("infoX").value = toTwoDP(curr.getLeft());
-	document.getElementById("infoY").value = toTwoDP(curr.getTop());
-	document.getElementById("infoW").value = toTwoDP(curr.getWidth());
-	document.getElementById("infoH").value = toTwoDP(curr.getHeight());
-	document.getElementById("infoAng").value = toTwoDP(curr.getAngle() % 360);
 	// Change fields for infowin
 	var activeObj = canvas.getActiveObject();
-	var activeGrp = canvas.getActiveGroup();
-	if(activeGrp){
-		document.getElementById("toolBox2").style.display = "block";
-		document.getElementById("toolBox1").style.display = "none";
-		document.getElementById("infotablep").style.display = "table";
-		document.getElementById("infotable1a").style.display = "none";
-		document.getElementById("itext-controls").style.display = "none";
-	}else if(activeObj){
-		document.getElementById("toolBox1").style.display = "block";
-		document.getElementById("toolBox2").style.display = "none";
-		document.getElementById("infotablep").style.display = "table";
-		if(activeObj._objects != null){
-			document.getElementById("breakgrpbtn").style.display = "inline-block";
-			document.getElementById("infoFill").style.display = "none";
-			document.getElementById("infoFillB").style.display = "none";
-		}else{
-			document.getElementById("breakgrpbtn").style.display = "none";
-			// Note: this works overall since infotable is controlled by later commands
-			document.getElementById("infoFill").style.display = "table-cell";
-			document.getElementById("infoFillB").style.display = "table-cell";
-		}
+	if(activeObj){
 		if(activeObj.type=='i-text'){
 			activeObj.lockUniScaling = true;
 			document.getElementById("fontSize").value = activeObj.fontSize;
 			document.getElementById("strokeWidth").value = activeObj.strokeWidth;
-			document.getElementById("infotable1a").style.display = "none";
 			document.getElementById("itext-controls").style.display = "block";
-			if(activeObj.postit){
-				document.getElementById("changePostitColor").style.display = "inline-block";
-				$('#backgroundColor').colpickSetColor(activeObj.get("backgroundColor"),true);
-				if(activeObj.getFill())
-					$('#btntextColor').colpickSetColor(activeObj.getFill(),true);
-				else
-					$('#textBackgroundColor').colpickSetColor('#ffffff',true);
-				if(activeObj.getTextBackgroundColor())
-					$('#textBackgroundColor').colpickSetColor(activeObj.getTextBackgroundColor(),true);
-				else
-					$('#textBackgroundColor').colpickSetColor('#ffffff',true);
-				if(activeObj.getStroke())
-					$('#stroke').colpickSetColor(activeObj.getStroke(),true);
-				else
-					$('#stroke').colpickSetColor('#ffffff',true);
-			}else{
-				if(activeObj.getStroke()) $('#stroke').colpickSetColor(activeObj.getStroke(), true);
-				else $('#stroke').colpickSetColor('#ffffff', true)
-					document.getElementById("changePostitColor").style.display = "none";
-			}
+			if(activeObj.getStroke()) $('#stroke').colpickSetColor(activeObj.getStroke(), true);
+			else $('#stroke').colpickSetColor('#ffffff', true)
 		}else{
-			document.getElementById("infotable1a").style.display = "table-row";
 			document.getElementById("itext-controls").style.display = "none";
 			$('#fillColor').colpickSetColor(activeObj.getFill(),true);
 		}
@@ -792,17 +785,9 @@ function toTwoDP(num){
 	return Math.round(num*100)/100;
 }
 function resetInfoWin(){
-	document.getElementById("infoX").value="";
-	document.getElementById("infoY").value="";
-	document.getElementById("infoW").value="";
-	document.getElementById("infoH").value="";
-	document.getElementById("infoAng").value="";
 	// Deselect effects
 	atLimit=null;
 	orig=null;
-	document.getElementById("toolBox1").style.display = "none";
-	document.getElementById("toolBox2").style.display = "none";
-	document.getElementById("infotablep").style.display = "none";
 	document.getElementById("itext-controls").style.display = "none";
 }
 function updateFromWin(box){
@@ -846,6 +831,10 @@ function updateFromWin(box){
 	orig = fabric.util.object.clone(curr);
 	isSaved = false;
 }
+
+
+
+
 
 /************************ BOARD BOUNDARIES *************************/
 // Save original state for clone (on selection)

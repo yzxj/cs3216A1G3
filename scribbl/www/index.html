@@ -93,10 +93,6 @@
   		width: 400px;
   	}
 
-  	#changePostitColor {
-  		vertical-align: middle;
-  	}
-
   	#loadingText {
   		z-index: -1;
   		font-size: 30px;
@@ -183,12 +179,8 @@
 							<tr><strong>Properties:</strong></tr>
 							<tr><p></tr>
 							<tr>
-								<td align="right">Object Colour:</td>
+								<td align="right">Colour:</td>
 								<td><span class="color-box" id="newblkcol" /></td>
-							</tr>
-							<tr>
-								<td align="right">Text Colour:</td>
-								<td><span class="color-box" id="newtextcolor" /></td>
 							</tr>
 							<tr>
 								<td align="right">Text(optional):</td>
@@ -202,7 +194,6 @@
 							<span class="btn-group">
 								<button type="button" class="btn btn-default" id="addblock" onclick="addBlock()">Block</button>
 								<button type="button" class="btn btn-default" id="addtext" onclick="addText()">Textbox</button>
-								<button type="button" class="btn btn-default" id="addpostit" onclick="addPostIt()">Post-It</button>
 								<button type="button" class="btn btn-default" id="addimage" onclick="imageBox()">Image</button>
 							</span>
 						</p>
@@ -223,50 +214,6 @@
 					</div>
 					<!--************************* Current Object *************************-->
 					<div class="tab-pane fade" id="modifycurrent">
-						<div id="toolBox1">
-							<strong>Object Controls:</strong>
-							<p></p>
-							<div class="btn-group">
-								<button type="button" class="btn btn-default" onclick="delActive()">Delete</button>
-								<button type="button" class="btn btn-default" onclick="cloneActive()">Clone</button>
-								<div class="btn-group">
-									<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"> Position
-										<span class="caret"></span>
-									</button>
-									<ul class="dropdown-menu" role="menu">
-										<li><a href="" onclick="canvas.getActiveObject().bringForward(); return false;">Bring Forward</a></li>
-										<li><a href="" onclick="canvas.getActiveObject().sendBackwards(); return false;">Send Backwards</a></li>
-									</ul>
-								</div>
-							</div>
-							<span id="breakgrpbtn" hidden="true"><button type="button" class="btn btn-default" onclick="breakActiveGrp()">Break Group</button> </span>
-							<p></p>
-						</div>
-						<div id="toolBox2" hidden>
-							<strong>Group Controls:</strong>
-							<p></p>
-							<div class="btn-group">
-								<button type="button" class="btn btn-default" onclick="delActive()">Delete</button>
-								<button type="button" class="btn btn-default" onclick="cloneActive()">Clone</button>
-							</div>
-							<button class="btn btn-default" onclick="groupActive()">Group</button>
-							<p></p>
-						</div>
-						<div id="infotablep">
-							<table id="infotable">
-								<tr id="infotable1a"> <!--to hide when it is i-text-->
-									<td> Height: </td><td> <input type="text" id="infoH" style="width:50px;" maxlength="6" onchange="updateFromWin(this)"> </td>
-									<td> Width: </td><td> <input type="text" id="infoW" style="width:50px;" maxlength="6" onchange="updateFromWin(this)"> </td>
-									<td id="infoFill"> Fill: </td><td id="infoFillB"> <span class="color-box" id="fillColor" /> </td>
-								</tr>
-								<tr id="infotable1b">
-									<td> X: </td><td> <input type="text" id="infoX" style="width:50px;" maxlength="6" onchange="updateFromWin(this)"> </td>
-									<td> Y: </td><td> <input type="text" id="infoY" style="width:50px;" maxlength="6" onchange="updateFromWin(this)"> </td>
-									<td> Angle: </td><td> <input type="text" id="infoAng" style="width:50px;" maxlength="6" onchange="updateFromWin(this)"></td>
-								</tr>
-							</table>
-						</div>
-						<p></p>
 						<!--ITEXT CONTROLS-->
 						<div id="itext-controls">
 							<strong> Text Controls: </strong>
@@ -309,15 +256,6 @@
 									<option value="right">Right</option>
 									<option value="justify">Justify</option>
 								</select>
-							</div>
-							<p></p>
-							<div>
-								<span id="changePostitColor">
-								PostIt Color:
-								<span class="color-box" id="backgroundColor" />
-								</span></span>
-								<button class="btn btn-xs btn-default" onclick="clearHighlight()">Highlight (Off):</button>
-								<span class="color-box" id="textBackgroundColor"/>
 							</div>
 							<p></p>
 							<div>
