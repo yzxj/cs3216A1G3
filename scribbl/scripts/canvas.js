@@ -264,8 +264,12 @@ function setLastObjUnselectable() {
 
 // TODO: SHIFT TO A PROPER PLACE LATER
 var undoStack = [];
+var numObj = 0;
 function resetUndoStack() {
-	undoStack = [];
+	if (numObj != canvas._objects.length)
+		undoStack = [];
+	// TODO: HOW TO HANDLE MODIFICATIONS?
+	// TODO: Won't work for a redo button
 }
 
 function undo() {
@@ -274,13 +278,15 @@ function undo() {
 		var undoItem = canvas._objects[lastItemIndex];
 		undoStack.push(undoItem);
 		canvas.remove(undoItem);
+		numObj = lastItemIndex;
 	}
 }
 function redo() {
 	if (undoStack.length>0) {
 		var redoItem = undoStack[undoStack.length-1];
-		canvas.add(redoItem);
 		undoStack.pop(redoItem);
+		canvas.add(redoItem);
+		numObj = canvas._objects.length;
 	}
 }
 
