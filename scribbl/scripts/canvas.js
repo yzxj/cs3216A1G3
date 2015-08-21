@@ -46,7 +46,8 @@ var idleInterval;			// Holds ID for setInterval() idle timer (for reset)
     selection: false
   });
 
-  initEdit();
+  addCanvasListeners();
+  addWindowListeners();
   resetInfoWin();
   //promptBoardEmpty();
   initColPickers();
@@ -215,8 +216,7 @@ var idleInterval;			// Holds ID for setInterval() idle timer (for reset)
   }
 })();
 
-function initEdit(){
-	// Add edit-mode functionalities
+function addCanvasListeners() {
 	canvas.on({
 		'object:modified': checkOOB,
 		'object:selected': objSelected,
@@ -224,38 +224,63 @@ function initEdit(){
 		'object:rotating': setLimit,
 		'selection:cleared': resetInfoWin,
 		'object:added' : setLastObjUnselectable,
+		'mouse:up' : resetUndoStack,
 	});
-	// $(document).on('keydown', function(e){	// Ctrl+S functionality
-	// 	if(e.ctrlKey && e.which === 83){	// Check for the Ctrl key being pressed, and if the key = [S] (83)
-	// 		saveCanvas(true);
-	// 		e.preventDefault();
-	// 	}
-	// });
+	// TODO: Add listener to CUT OFF drawings to canvas area
+	// Try canvas.clipTo?
+	// TODO: Add export to dataURL, which may need clipping also
+}
+
+function addWindowListeners() {
+	$(document).on('keydown', function(e){
+		if(e.ctrlKey) {  // If ctrl is pressed
+			switch(e.which){
+				case 89: // Y
+					redo();
+					e.preventDefault();
+					break;
+				case 90: // Z
+					undo();
+					e.preventDefault();
+					break;
+			}
+		}
+	});
 	// window.onbeforeunload = function(e){	// Page-leave functionality
 	// 	if(!isSaved)
 	// 		saveCanvas(false);
 	// 	timedOut(false);
 	// };
-	$(document).on('keydown', function(e){	// Ctrl+S functionality
-		if(e.ctrlKey && e.which === 90){	// Check for Ctrl and Z
-			undo();
-			e.preventDefault();
-		}
-	});
 }
+
 function setLastObjUnselectable() {
 	// TODO: CHECK IF IT IS A TEXT/WHATEVER THAT NEEDS SELECTING
 	var lastIndex = canvas._objects.length - 1;
-	var lastItem = canvas._objects[lastIndex];
-	lastItem.selectable = false;
+	var undoStack = canvas._objects[lastIndex];
+	undoStack.selectable = false;
 }
 
-// TEST: TO SHIFT LATER
+
+
+// TODO: SHIFT TO A PROPER PLACE LATER
+var undoStack = [];
+function resetUndoStack() {
+	undoStack = [];
+}
+
 function undo() {
-	var lastIndex = canvas._objects.length - 1;
-	if (lastIndex>=0) {
-		var lastItem = canvas._objects[lastIndex];
-		canvas.remove(lastItem);
+	var lastItemIndex = canvas._objects.length - 1;
+	if (lastItemIndex>=0) {
+		var undoItem = canvas._objects[lastItemIndex];
+		undoStack.push(undoItem);
+		canvas.remove(undoItem);
+	}
+}
+function redo() {
+	if (undoStack.length>0) {
+		var redoItem = undoStack[undoStack.length-1];
+		canvas.add(redoItem);
+		undoStack.pop(redoItem);
 	}
 }
 
