@@ -47,6 +47,9 @@ var idleInterval;			// Holds ID for setInterval() idle timer (for reset)
   });
 
   initEdit();
+  resetInfoWin();
+  //promptBoardEmpty();
+  initColPickers();
 
   /***** Sets up Free Drawing *****/
 
@@ -220,6 +223,7 @@ function initEdit(){
 		'object:scaling': setLimit,
 		'object:rotating': setLimit,
 		'selection:cleared': resetInfoWin,
+		'object:added' : setLastObjUnselectable,
 	});
 	// $(document).on('keydown', function(e){	// Ctrl+S functionality
 	// 	if(e.ctrlKey && e.which === 83){	// Check for the Ctrl key being pressed, and if the key = [S] (83)
@@ -232,11 +236,29 @@ function initEdit(){
 	// 		saveCanvas(false);
 	// 	timedOut(false);
 	// };
-	// Initial load auxiliary function(s)
-	resetInfoWin();
-	//promptBoardEmpty();
-	initColPickers();
+	$(document).on('keydown', function(e){	// Ctrl+S functionality
+		if(e.ctrlKey && e.which === 90){	// Check for Ctrl and Z
+			undo();
+			e.preventDefault();
+		}
+	});
 }
+function setLastObjUnselectable() {
+	// TODO: CHECK IF IT IS A TEXT/WHATEVER THAT NEEDS SELECTING
+	var lastIndex = canvas._objects.length - 1;
+	var lastItem = canvas._objects[lastIndex];
+	lastItem.selectable = false;
+}
+
+// TEST: TO SHIFT LATER
+function undo() {
+	var lastIndex = canvas._objects.length - 1;
+	if (lastIndex>=0) {
+		var lastItem = canvas._objects[lastIndex];
+		canvas.remove(lastItem);
+	}
+}
+
 function promptBoardEmpty() {
 	var data = jQuery.parseJSON(lastSave);
 	if(data.objects == ""){
