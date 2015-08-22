@@ -222,9 +222,9 @@ function addCanvasListeners() {
 		'object:selected': objSelected,
 		'object:scaling': setLimit,
 		'object:rotating': setLimit,
-		'selection:cleared': resetInfoWin,
-		'object:added' : setLastObjUnselectable,
-		'mouse:up' : resetUndoStack,
+		'selection:cleared': selCleared,
+		'object:added' : objAdded,
+		'mouse:up' : onMouseUp,
 	});
 	// TODO: Add listener to CUT OFF drawings to canvas area
 	// Try canvas.clipTo?
@@ -253,14 +253,25 @@ function addWindowListeners() {
 	// };
 }
 
+function objAdded() {
+	if (canvas.isDrawingMode) {
+		setLastObjUnselectable();
+	}
+}
+
+function onMouseUp () {
+	resetUndoStack();
+	setLastObjUnselectable();
+	// STILL A LITTLE BROKEN FOR TEXT
+	// TODO: USE OBJECT DESELECT
+}
+
 function setLastObjUnselectable() {
 	// TODO: CHECK IF IT IS A TEXT/WHATEVER THAT NEEDS SELECTING
 	var lastIndex = canvas._objects.length - 1;
 	var undoStack = canvas._objects[lastIndex];
 	undoStack.selectable = false;
 }
-
-
 
 // TODO: SHIFT TO A PROPER PLACE LATER
 var undoStack = [];
@@ -289,6 +300,17 @@ function redo() {
 		numObj = canvas._objects.length;
 	}
 }
+function selCleared() {
+	resetInfoWin();
+	if (!canvas.isDrawingMode)
+		setLastObjUnselectable();
+}
+
+
+
+
+
+
 
 function promptBoardEmpty() {
 	var data = jQuery.parseJSON(lastSave);
