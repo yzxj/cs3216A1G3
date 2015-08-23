@@ -141,7 +141,10 @@
 					<!--************************* New Objects *************************-->
 					<div class="tab-pane fade in active" id="createobjects">
 						<table id="newobjtable">
-							<tr><button id="drawing-mode" class="btn btn-info">Cancel drawing mode</button></tr>
+							<tr>
+								<button id="drawing-mode" class="btn btn-info">Stop Drawing</button>
+								<button id="eraser-mode" class="btn btn-warning">Eraser</button>
+							</tr>
 							<tr><p></tr>
 							<tr><strong>Drawing Options</strong></tr>
 							<tr><div id="drawing-mode-options">
@@ -269,7 +272,7 @@
 				</div>
 				<div id="boardButtons">
 				<p>
-					<button class="btn btn-danger" onclick="clearCanvas()">Clear</button>
+					<button id="clear-canvas" class="btn btn-danger">Clear</button>
 				</p>
 				</div>
 			</td>

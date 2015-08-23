@@ -37,7 +37,9 @@ var	drawingModeEl,
 	drawingShadowColorEl,
 	drawingLineWidthEl,
 	drawingShadowWidth,
-	drawingShadowOffset;
+	drawingShadowOffset,
+	eraserModeEl,
+	clearE1;
 
 
 
@@ -46,23 +48,23 @@ var	drawingModeEl,
 /************************ BOARD INITIALISATION *************************/
 // Self Invoking / Init function
 (function() {
-  var $ = function(id){return document.getElementById(id)};
+	var $ = function(id){return document.getElementById(id)};
 
-  canvas = this.__canvas = new fabric.Canvas('canvas', {
-    isDrawingMode: true,
-    selection: false
-  });
+	canvas = this.__canvas = new fabric.Canvas('canvas', {
+		isDrawingMode: true,
+		selection: false
+	});
 
-  addCanvasListeners();
-  addWindowListeners();
-  resetInfoWin();
-  //promptBoardEmpty();
-  initColPickers();
-  initHistory();
+	addCanvasListeners();
+	addWindowListeners();
+	resetInfoWin();
+	//promptBoardEmpty();
+	initColPickers();
+	initHistory();
 
-  /***** Sets up Free Drawing *****/
+	/***** Sets up Free Drawing *****/
 
-  fabric.Object.prototype.transparentCorners = false;
+	fabric.Object.prototype.transparentCorners = false;
 
 	drawingModeEl = $('drawing-mode'),
 	drawingOptionsEl = $('drawing-mode-options'),
@@ -71,30 +73,31 @@ var	drawingModeEl,
 	drawingLineWidthEl = $('drawing-line-width'),
 	drawingShadowWidth = $('drawing-shadow-width'),
 	drawingShadowOffset = $('drawing-shadow-offset');
-      // clearEl = $('clear-canvas');
+	eraserModeEl = $('eraser-mode');
+    clearEl = $('clear-canvas');
 
-  // clearEl.onclick = function() { canvas.clear() };
+	clearEl.onclick = clearCanvas;
+	drawingModeEl.onclick = toggleDrawingMode;
+	eraserModeEl.onclick = toggleEraserMode;
 
-  drawingModeEl.onclick = toggleDrawingMode;
+	if (fabric.PatternBrush) {
+		var vLinePatternBrush = new fabric.PatternBrush(canvas);
+		vLinePatternBrush.getPatternSrc = function() {
 
-  if (fabric.PatternBrush) {
-    var vLinePatternBrush = new fabric.PatternBrush(canvas);
-    vLinePatternBrush.getPatternSrc = function() {
+		var patternCanvas = fabric.document.createElement('canvas');
+		patternCanvas.width = patternCanvas.height = 10;
+		var ctx = patternCanvas.getContext('2d');
 
-      var patternCanvas = fabric.document.createElement('canvas');
-      patternCanvas.width = patternCanvas.height = 10;
-      var ctx = patternCanvas.getContext('2d');
+		ctx.strokeStyle = this.color;
+		ctx.lineWidth = 5;
+		ctx.beginPath();
+		ctx.moveTo(0, 5);
+		ctx.lineTo(10, 5);
+		ctx.closePath();
+		ctx.stroke();
 
-      ctx.strokeStyle = this.color;
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.moveTo(0, 5);
-      ctx.lineTo(10, 5);
-      ctx.closePath();
-      ctx.stroke();
-
-      return patternCanvas;
-    };
+		return patternCanvas;
+	};
 
     var hLinePatternBrush = new fabric.PatternBrush(canvas);
     hLinePatternBrush.getPatternSrc = function() {
@@ -214,14 +217,52 @@ var	drawingModeEl,
   }
 })();
 
-function toggleDrawingMode() {
+function toggleDrawingMode(calledByUser) {
+	// When called by onclick, calledByUser is actually a mouseEvent
+	// calledByUser = calledByUser || false;
+	// calledByUser = (typeof calledByUser == 'boolean') ? calledByUser : true;
+	
+	if (inEraserMode /*&& calledByUser*/) {
+		toggleEraserMode();
+	}
+
 	canvas.isDrawingMode = !canvas.isDrawingMode;
 	if (canvas.isDrawingMode) {
-		drawingModeEl.innerHTML = 'Cancel drawing mode';
+		drawingModeEl.innerHTML = 'Stop Drawing';
 		drawingOptionsEl.style.display = '';
+
+		canvas.discardActiveObject();
 	} else {
-		drawingModeEl.innerHTML = 'Enter drawing mode';
+		drawingModeEl.innerHTML = 'Draw';
 		drawingOptionsEl.style.display = 'none';
+	}
+}
+
+
+var inEraserMode = false;
+function toggleEraserMode(calledByUser) {
+	if (canvas.isDrawingMode) {
+		toggleDrawingMode();
+	}
+
+	inEraserMode = !inEraserMode;
+	if (inEraserMode) {
+		eraserModeEl.innerHTML = 'Stop Erasing';
+		canvas.defaultCursor = 'cell';
+
+		canvas.discardActiveObject();
+		canvas.selection = false;
+		canvas.forEachObject(function(o) {
+			o.selectable = false;
+		});
+	} else {
+		eraserModeEl.innerHTML = 'Eraser';
+		canvas.defaultCursor = 'default';
+		canvas.selection = true;
+		canvas.forEachObject(function(o) {
+			if(o.type !== 'path')
+				o.selectable = true;
+		});
 	}
 }
 
@@ -235,7 +276,9 @@ function addCanvasListeners() {
 		'object:rotating': onObjRotating,
 		'path:created': onPathCreated,
 		'selection:cleared': onSelectionCleared,
-		'mouse:up' : onMouseUp,
+		'mouse:up': onMouseUp,
+		'mouse:down': onMouseDown,
+		'mouse:move': onMouseMove,
 	});
 	// TODO: Add listener to CUT OFF drawings to canvas area
 	// Try canvas.clipTo?
@@ -268,16 +311,17 @@ function addWindowListeners() {
 /***** LISTENER FUNCTIONS *****/
 
 function onObjAdded(e) {
-	updateHistory();
 	if (histWorking) {
 		// Object "type"s seem to only appear AFTER a canvas
 		// is loaded from a save. This section of code is a workaround
 		// to ensure that brush strokes are not selectable.
-		var curr = canvas._objects[canvas._objects.length-1];
+		var curr = canvasLastObj();
 		if (curr.type == "path")
 			setLastObjUnselectable();
+	} else {
+		updateHistory();
+		loadCurr();
 	}
-	console.log(canvas._objects);
 }
 
 function onObjModified(e) {
@@ -324,19 +368,68 @@ function onSelectionCleared() {
 	}
 }
 
-function onMouseUp() {
 
+function onMouseDown(ev) {
+	if (inEraserMode) {
+		erase(ev);
+	}
 }
 
+function onMouseMove(ev) {
+	if (inEraserMode) {
+		erase(ev);
+	}
+}
+
+function onMouseUp(ev) {
+	if (inEraserMode) {
+		erase(ev);
+	}
+}
+
+var erasing = false;
+function erase(ev) {
+	switch(ev.e.type.toLowerCase()) {
+		case 'mousedown':
+			erasing = true;
+			removeIfPath(ev);
+			break;
+		case 'mousemove':
+			if(erasing)
+				removeIfPath(ev);
+			break;
+		case 'mouseup':
+			erasing = false;
+			break;
+	}
+}
+
+function removeIfPath(ev) {
+	var mouseEv = ev.e;
+	var target = canvas.findTarget(mouseEv, true);
+	// console.log(target);
+	// if (target !== undefined && target.type == "path") {
+	// 	var cursorPt = new fabric.Point(mouseEv.x, mouseEv.y);
+	// 	console.log(target.getLocalPointer(ev.e, cursorPt));
+	// 	var test = target.getLocalPointer(ev.e, cursorPt);
+	// 	if(target.containsPoint(test)) {
+	// 		console.log("hit");
+	// 		canvas.remove(target);
+	// 		updateHistory();
+	// 	}
+	// }
+	if (target !== undefined && target.type == "path") {
+		canvas.remove(target);
+		updateHistory();
+	}
+}
 
 
 
 function setLastObjUnselectable() {
 	// Can't seem to determine if an object is a drawing
 	// Text objects turned up as 'path's as well.
-	var lastIndex = canvas._objects.length - 1;
-	var undoStack = canvas._objects[lastIndex];
-	undoStack.selectable = false;
+	canvasLastObj().selectable = false;
 }
 
 
@@ -355,7 +448,7 @@ function initHistory() {
 }
 function updateHistory() {
 	// Objects added on canvas load are 
-	// considered "object:added"; this is a workaround
+	// considered "object:added"; this is a safety net
 	// for when undo or redo is called
 	if (histWorking) return;
 
@@ -375,6 +468,15 @@ function updateHistory() {
 	}
 	histList.push(JSON.stringify(canvas));
 }
+// A very hack-ish workaround to ensure consistent
+// behaviour of objects, esp. object types
+// i.e. always work with data loaded from save
+function loadCurr() {
+	histWorking = true;
+	canvas.loadFromJSON(histList[histIndex]);
+	canvas.renderAll();
+	histWorking = false;
+}
 function undo() {
 	if (histIndex>0) {
 		// Tell updateHistory to ignore actions
@@ -393,6 +495,10 @@ function redo() {
 		canvas.renderAll();
 		histWorking = false;
 	}
+}
+
+function canvasLastObj() {
+	return canvas._objects[canvas._objects.length-1];
 }
 
 
@@ -590,6 +696,7 @@ function setDefSettings(curr){	// *** consider adding these features to toJSON(o
 }
 function addText() {
 	if(canvas.isDrawingMode) toggleDrawingMode();
+	else if(inEraserMode) toggleEraserMode();
 
 	var input = document.getElementById("newtext");
 	var text = input.value;
@@ -603,7 +710,7 @@ function addText() {
 	setDefSettings(newText);
 
 	canvas.add(newText);
-	canvas.setActiveObject(newText);
+	canvas.setActiveObject(canvasLastObj());
 	isSaved = false;
 }
 // function addPostIt(){
