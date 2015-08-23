@@ -255,13 +255,13 @@ function addWindowListeners() {
 
 function objAdded() {
 	if (canvas.isDrawingMode) {
-		setLastObjUnselectable();
+		//setLastObjUnselectable();
 	}
 }
 
 function onMouseUp () {
 	resetUndoStack();
-	setLastObjUnselectable();
+	//setLastObjUnselectable();
 	// STILL A LITTLE BROKEN FOR TEXT
 	// TODO: USE OBJECT DESELECT
 }
@@ -472,13 +472,6 @@ function saveCanvas(wAlert){
 	// 	alert("Successfully saved!");
 	// isSaved = true;
 }
-function revert(){
-	var resp=confirm("You sure? All your unsaved work will be lost...");
-	if(resp==true){
-		loadCanvas();
-		orig=null;
-	}
-}
 function clearCanvas(){
 	var resp=confirm("Are you sure? This will clear everything!");
 	if (resp){
@@ -506,21 +499,6 @@ function setDefSettings(curr){	// *** consider adding these features to toJSON(o
 		curr.set({minScaleLimit: 10.0/curr.height});
 	else
 		curr.set({minScaleLimit: 10.0/curr.width});
-}
-function addBlock(){
-	var rect = new fabric.Rect({
-		width: 10,
-		height: 10,
-		scaleX: 3,
-		scaleY: 3,
-		fill: blkcolor,
-	});
-	setDefSettings(rect);		// Consider add(rect) to do setDef, .add(), center()/setCoords, setActive, isSaved
-	canvas.add(rect);
-	rect.center();
-	rect.setCoords();
-	canvas.setActiveObject(rect);
-	isSaved = false;
 }
 function addText() {
 	var input = document.getElementById("newtext");
