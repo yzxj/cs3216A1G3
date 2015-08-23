@@ -31,6 +31,13 @@ var isSaved;				// Counter for whether changes have been made
 var idleTime = 0;			// Counter for number of minutes user is idle
 var idleInterval;			// Holds ID for setInterval() idle timer (for reset)
 
+var	drawingModeEl,
+	drawingOptionsEl,
+	drawingColorEl,
+	drawingShadowColorEl,
+	drawingLineWidthEl,
+	drawingShadowWidth,
+	drawingShadowOffset;
 
 
 
@@ -51,33 +58,24 @@ var idleInterval;			// Holds ID for setInterval() idle timer (for reset)
   resetInfoWin();
   //promptBoardEmpty();
   initColPickers();
+  initHistory();
 
   /***** Sets up Free Drawing *****/
 
   fabric.Object.prototype.transparentCorners = false;
 
-  var drawingModeEl = $('drawing-mode'),
-      drawingOptionsEl = $('drawing-mode-options'),
-      drawingColorEl = $('drawing-color'),
-      drawingShadowColorEl = $('drawing-shadow-color'),
-      drawingLineWidthEl = $('drawing-line-width'),
-      drawingShadowWidth = $('drawing-shadow-width'),
-      drawingShadowOffset = $('drawing-shadow-offset');
+	drawingModeEl = $('drawing-mode'),
+	drawingOptionsEl = $('drawing-mode-options'),
+	drawingColorEl = $('drawing-color'),
+	drawingShadowColorEl = $('drawing-shadow-color'),
+	drawingLineWidthEl = $('drawing-line-width'),
+	drawingShadowWidth = $('drawing-shadow-width'),
+	drawingShadowOffset = $('drawing-shadow-offset');
       // clearEl = $('clear-canvas');
 
   // clearEl.onclick = function() { canvas.clear() };
 
-  drawingModeEl.onclick = function() {
-    canvas.isDrawingMode = !canvas.isDrawingMode;
-    if (canvas.isDrawingMode) {
-      drawingModeEl.innerHTML = 'Cancel drawing mode';
-      drawingOptionsEl.style.display = '';
-    }
-    else {
-      drawingModeEl.innerHTML = 'Enter drawing mode';
-      drawingOptionsEl.style.display = 'none';
-    }
-  };
+  drawingModeEl.onclick = toggleDrawingMode;
 
   if (fabric.PatternBrush) {
     var vLinePatternBrush = new fabric.PatternBrush(canvas);
@@ -216,14 +214,27 @@ var idleInterval;			// Holds ID for setInterval() idle timer (for reset)
   }
 })();
 
+function toggleDrawingMode() {
+	canvas.isDrawingMode = !canvas.isDrawingMode;
+	if (canvas.isDrawingMode) {
+		drawingModeEl.innerHTML = 'Cancel drawing mode';
+		drawingOptionsEl.style.display = '';
+	} else {
+		drawingModeEl.innerHTML = 'Enter drawing mode';
+		drawingOptionsEl.style.display = 'none';
+	}
+}
+
+
 function addCanvasListeners() {
 	canvas.on({
-		'object:modified': checkOOB,
-		'object:selected': objSelected,
-		'object:scaling': setLimit,
-		'object:rotating': setLimit,
-		'selection:cleared': selCleared,
-		'object:added' : objAdded,
+		'object:added' : onObjAdded,
+		'object:modified': onObjModified,
+		'object:selected': onObjSelected,
+		'object:scaling': onObjScaling,
+		'object:rotating': onObjRotating,
+		'path:created': onPathCreated,
+		'selection:cleared': onSelectionCleared,
 		'mouse:up' : onMouseUp,
 	});
 	// TODO: Add listener to CUT OFF drawings to canvas area
@@ -253,59 +264,136 @@ function addWindowListeners() {
 	// };
 }
 
-function objAdded() {
-	if (canvas.isDrawingMode) {
-		//setLastObjUnselectable();
+
+/***** LISTENER FUNCTIONS *****/
+
+function onObjAdded(e) {
+	updateHistory();
+	if (histWorking) {
+		// Object "type"s seem to only appear AFTER a canvas
+		// is loaded from a save. This section of code is a workaround
+		// to ensure that brush strokes are not selectable.
+		var curr = canvas._objects[canvas._objects.length-1];
+		if (curr.type == "path")
+			setLastObjUnselectable();
+	}
+	console.log(canvas._objects);
+}
+
+function onObjModified(e) {
+	checkOOB(e);
+	updateHistory();
+}
+
+function onObjRemoved(e) {
+	updateHistory();
+}
+
+function onObjScaling(e) {
+	setLimit(e);
+}
+
+function onObjRotating(e) {
+	setLimit(e);
+}
+
+function onPathCreated(e) {
+	setLastObjUnselectable();
+}
+
+// Save original state for clone (on selection)
+// Triggers switchTab(), updates InfoWindow
+function onObjSelected(e) {
+	// TODO/NOTE: UNTOUCHED FROM PREV PROJECT
+	orig = fabric.util.object.clone(e.target);
+	atLimit = {
+		top: orig.getTop(),
+		left: orig.getLeft(),
+		scaleX: orig.getScaleX(),
+		scaleY: orig.getScaleY(),
+		angle: orig.getAngle(),
+	};
+	switchTab();
+	//updateInfoWin(orig);
+}
+
+function onSelectionCleared() {
+	if (!canvas.isDrawingMode) {
+		resetInfoWin();
+		switchTab("create");
 	}
 }
 
-function onMouseUp () {
-	resetUndoStack();
-	//setLastObjUnselectable();
-	// STILL A LITTLE BROKEN FOR TEXT
-	// TODO: USE OBJECT DESELECT
+function onMouseUp() {
+
 }
 
+
+
+
 function setLastObjUnselectable() {
-	// TODO: CHECK IF IT IS A TEXT/WHATEVER THAT NEEDS SELECTING
+	// Can't seem to determine if an object is a drawing
+	// Text objects turned up as 'path's as well.
 	var lastIndex = canvas._objects.length - 1;
 	var undoStack = canvas._objects[lastIndex];
 	undoStack.selectable = false;
 }
 
-// TODO: SHIFT TO A PROPER PLACE LATER
-var undoStack = [];
-var numObj = 0;
-function resetUndoStack() {
-	if (numObj != canvas._objects.length)
-		undoStack = [];
-	// TODO: HOW TO HANDLE MODIFICATIONS?
-	// TODO: Won't work for a redo button
-}
 
+// HISTORY FUNCTIONS
+var histList;
+var histIndex;
+var histMax;
+var histWorking;
+function initHistory() {
+	// May not be necessary, this just makes
+	// sure the canvas is initialised first
+	histList = [JSON.stringify(canvas)];
+	histIndex = 0;
+	histMax = 49;
+	histWorking = false;
+}
+function updateHistory() {
+	// Objects added on canvas load are 
+	// considered "object:added"; this is a workaround
+	// for when undo or redo is called
+	if (histWorking) return;
+
+	// Remove all items after histIndex
+	histLast = histList.length - 1;
+	if (histLast > histIndex) {
+		var numToRemove = histLast - histIndex;
+		histList.splice(histIndex+1,numToRemove);
+	}
+
+	// Add item to list, taking note
+	// to only keep histMax+1 items
+	if (histIndex==histMax) {
+		histList.shift();
+	} else {
+		histIndex++;
+	}
+	histList.push(JSON.stringify(canvas));
+}
 function undo() {
-	var lastItemIndex = canvas._objects.length - 1;
-	if (lastItemIndex>=0) {
-		var undoItem = canvas._objects[lastItemIndex];
-		undoStack.push(undoItem);
-		canvas.remove(undoItem);
-		numObj = lastItemIndex;
+	if (histIndex>0) {
+		// Tell updateHistory to ignore actions
+		histWorking = true;
+		canvas.loadFromJSON(histList[--histIndex]);
+		canvas.renderAll();
+		histWorking = false;
 	}
 }
 function redo() {
-	if (undoStack.length>0) {
-		var redoItem = undoStack[undoStack.length-1];
-		undoStack.pop(redoItem);
-		canvas.add(redoItem);
-		numObj = canvas._objects.length;
+	histLast = histList.length - 1;
+	if (histIndex<histLast) {
+		// Tell updateHistory to ignore actions
+		histWorking = true;
+		canvas.loadFromJSON(histList[++histIndex]);
+		canvas.renderAll();
+		histWorking = false;
 	}
 }
-function selCleared() {
-	resetInfoWin();
-	if (!canvas.isDrawingMode)
-		setLastObjUnselectable();
-}
-
 
 
 
@@ -421,24 +509,24 @@ function initColPickers(){
 
 
 /************************ BOARD EDITOR CONTROLLERS *************************/
-function startIdleListener(){
-	// Increase idle time every minute
-	idleInterval = setInterval(timerIncrement, 60000);
-	// Zero the idle timer on mouse or keyboard movement
-	$(this).mousemove(function (e) {
-		idleTime = 0;
-	});
-	$(this).keypress(function (e) {
-		idleTime = 0;
-	});
-}
-function timerIncrement() {
-	if(++idleTime > 14) // 15 minutes
-		timedOut(true);
-}
-function timedOut(afk) {
+// function startIdleListener(){
+// 	// Increase idle time every minute
+// 	idleInterval = setInterval(timerIncrement, 60000);
+// 	// Zero the idle timer on mouse or keyboard movement
+// 	$(this).mousemove(function (e) {
+// 		idleTime = 0;
+// 	});
+// 	$(this).keypress(function (e) {
+// 		idleTime = 0;
+// 	});
+// }
+// function timerIncrement() {
+// 	if(++idleTime > 14) // 15 minutes
+// 		timedOut(true);
+// }
+// function timedOut(afk) {
 
-}
+// }
 
 
 
@@ -501,6 +589,8 @@ function setDefSettings(curr){	// *** consider adding these features to toJSON(o
 		curr.set({minScaleLimit: 10.0/curr.width});
 }
 function addText() {
+	if(canvas.isDrawingMode) toggleDrawingMode();
+
 	var input = document.getElementById("newtext");
 	var text = input.value;
 	if(text == null || text.trim() == ""){
@@ -508,48 +598,48 @@ function addText() {
 	}
 	var newText = new fabric.IText(text);
 	newText.set({fill: fntcolor});
+	newText.set("left", canvas.getWidth()/2);
+	newText.set("top", canvas.getHeight()/2);
+	setDefSettings(newText);
 
 	canvas.add(newText);
-	setDefSettings(newText);
-	newText.center();
-	newText.setCoords();
-
 	canvas.setActiveObject(newText);
 	isSaved = false;
 }
-function addPostIt(){
-	var bgcolor = blkcolor;
-	var txtcolor = fntcolor;
-	var input = document.getElementById("newtext");
-	var text = input.value;
-	if(text == null || text.trim() == ""){
-		text = "Click to edit";
-	}
-	var newText = new fabric.IText(text);
-	newText.fontSize = 30;
-	newText.backgroundColor = bgcolor;
-	newText.fill = txtcolor;
-	newText.paddingX = 10;
-	newText.paddingY = 20;
-	newText.scaleX = 0.6;
-	newText.scaleY = 0.6;
-	newText.lockUniScaling = true;
-	newText.postit = true;
-	newText.darkerShade = tinycolor.darken(bgcolor, 30).toHexString();
-	canvas.add(newText);
-	setDefSettings(newText);
-	newText.center();
-	newText.setCoords();
-	canvas.setActiveObject(newText);
-	isSaved = false;
+// function addPostIt(){
+// 	var bgcolor = blkcolor;
+// 	var txtcolor = fntcolor;
+// 	var input = document.getElementById("newtext");
+// 	var text = input.value;
+// 	if(text == null || text.trim() == ""){
+// 		text = "Click to edit";
+// 	}
+// 	var newText = new fabric.IText(text);
+// 	newText.fontSize = 30;
+// 	newText.backgroundColor = bgcolor;
+// 	newText.fill = txtcolor;
+// 	newText.paddingX = 10;
+// 	newText.paddingY = 20;
+// 	newText.scaleX = 0.6;
+// 	newText.scaleY = 0.6;
+// 	newText.lockUniScaling = true;
+// 	newText.postit = true;
+// 	newText.darkerShade = tinycolor.darken(bgcolor, 30).toHexString();
+// 	canvas.add(newText);
+// 	setDefSettings(newText);
+// 	newText.center();
+// 	newText.setCoords();
+// 	canvas.setActiveObject(newText);
+// 	isSaved = false;
+// }
+
+// IMAGE FUNCTIONS
+function imageBox(e) {
+	$("#imagebox").overlay().load();
 }
-	// IMAGE FUNCTIONS
-	function imageBox(e) {
-		$("#imagebox").overlay().load();
-	}
-	function preloadImage() {
-		var url = document.getElementById("imageurl").value;
-		var image = document.getElementById("imageHolder");
+function preloadImage() {
+	var url = document.getElementById("imageurl").value;
+	var image = document.getElementById("imageHolder");
 	// image.crossOrigin = 'anonymous';
 	image.src = url;
 	$("#noPreview").hide();
@@ -586,117 +676,6 @@ function clearHighlight() {
 
 
 
-/************************ OBJECT MODIFIERS *************************/
-function cloneActive(){
-	var curr = canvas.getActiveGroup() || canvas.getActiveObject();
-	var items = curr._objects;
-		// If curr contains multiple objects
-		if(items) {
-			var newItems = [];
-			curr.forEachObject( function(o) {
-				newItems.push(o.clone());
-			});
-			var clone = new fabric.Group(newItems);
-			canvas.add(clone);
-			setDefSettings(clone);
-			clone.center();
-			clone.setCoords();
-			canvas.discardActiveObject();
-			canvas.discardActiveGroup();
-			canvas.setActiveObject(clone);
-		}
-		//  If curr is a single object
-		else if(curr) {
-			var clone = fabric.util.object.clone(curr);
-			canvas.add(clone);
-			clone.center();
-			clone.setCoords();
-			canvas.discardActiveObject();
-			canvas.setActiveObject(clone);
-		}
-		// If no relevant object selected (remove this if isSaved is removed)
-		else {
-			return;
-		}
-		console.log(canvas);
-		isSaved = false;
-	}
-	function delActive() {
-		var currGrp = canvas.getActiveGroup();
-		var curr = canvas.getActiveObject();
-		if(currGrp){
-			currGrp.forEachObject(function(o){ canvas.remove(o) });
-			canvas.discardActiveGroup().renderAll();
-		} else if(curr){
-			canvas.remove(canvas.getActiveObject());
-		}
-		resetInfoWin();
-		isSaved = false;
-	}
-	function groupActive() {
-		var currGrp = canvas.getActiveGroup();
-		if(!currGrp) return;
-		// Does not support group-ception
-		var items = currGrp._objects;
-		for(var i = 0; i < items.length; i++) {
-			if(items[i]._objects!=null){
-				alert("Sorry, but we can't do group-ception! \n(i.e. no groups within groups allowed)");
-				return;
-			}
-		}
-		// Save current location
-		var coords = {
-			left: currGrp.left,
-			top: currGrp.top,
-			angle: currGrp.angle,
-		};
-		console.log(canvas);
-		// Save items to add/remove in two arrays
-		var grpItems = [];		// Clones of items
-		var toRemove = [];		// Actual items
-		// Find and save items in order of layer position
-		// (Largest index = top object in canvas | Currently an n*m algo; I don't see a workaround.)
-		for(var i=0; i<canvas._objects.length; i++){
-			var temp = canvas.item(i);
-			console.log(temp);
-			if(currGrp.contains(temp)){
-				console.log(fabric.util.object.clone(temp));
-				grpItems.push(fabric.util.object.clone(temp));		// Last object in grpItems is top item
-				console.log(grpItems);
-				toRemove.push(temp);				// Save the items to remove (no concurrent removal)
-			}
-		}
-		// Remove current items
-		for(var i=0; i<toRemove.length;i++){
-			canvas.remove(toRemove[i]);
-		}
-		canvas.discardActiveGroup();
-	// Add group onto canvas
-	console.log(grpItems);
-	var newGrp = new fabric.Group(grpItems);
-	canvas.add(newGrp);
-	setDefSettings(newGrp);
-	newGrp.set(coords);
-	newGrp.setCoords();
-	canvas.setActiveObject(newGrp);
-	isSaved = false;
-
-	console.log(newGrp);
-}
-function breakActiveGrp() {
-	var curr = canvas.getActiveObject();
-	if(!curr || curr._objects==null) return;
-	var items = curr._objects;
-	curr._restoreObjectsState();
-	canvas.remove(curr);
-	for(var i = 0; i < items.length; i++) {
-		canvas.add(items[i]);
-		setDefSettings(items[i]);
-		items[i].setCoords();
-	}
-	canvas.discardActiveObject();
-	isSaved = false;
-}
 // TEXT FUNCTIONS
 function textFont(){
 	var curr = canvas.getActiveObject();
@@ -811,11 +790,18 @@ function toggleOverline() {
 
 
 /************************ TAB-RELATED *************************/
-function switchTab(){
-	$("#myTab > .active").removeClass("active");
-	$("#myTabContent > .active").removeClass("active");
-	$("#currObjTab").addClass("active");
-	$("#modifycurrent").addClass("in active");
+function switchTab(tab){
+	if (tab == "create") {
+		$("#myTab > .active").removeClass("active");
+		$("#myTabContent > .active").removeClass("active");
+		$("#newObjTab").addClass("active");
+		$("#createobjects").addClass("in active");
+	} else {
+		$("#myTab > .active").removeClass("active");
+		$("#myTabContent > .active").removeClass("active");
+		$("#currObjTab").addClass("active");
+		$("#modifycurrent").addClass("in active");
+	}
 }
 function updateInfoWin(curr){
 	// Change fields for infowin
@@ -843,72 +829,17 @@ function resetInfoWin(){
 	orig=null;
 	document.getElementById("itext-controls").style.display = "none";
 }
-function updateFromWin(box){
-	var curr = canvas.getActiveObject();
-	if(!curr) return;
-	var boxVal = parseInt(box.value);
-	if(boxVal!=0 && !boxVal) return;
-	switch(box.id){
-		case "infoX":
-		curr.set({left: boxVal});
-		break;
-		case "infoY":
-		curr.set({top: boxVal});
-		break;
-		case "infoW":
-		curr.set({scaleX: boxVal/curr.width});
-		break;
-		case "infoH":
-			curr.set({scaleY: boxVal/curr.height});		// if(Math.abs(boxVal)<=800)
-			break;
-			case "infoAng":
-			curr.set({angle: boxVal%360});
-			break;
-		}
-		curr.setCoords();
-	// Check if OOB:
-	// (1) checkPos will push obj back in
-	// (2) checkScaleAngle will reset obj if still OOB
-	if(checkPos(curr) && checkScaleAngle(curr))
-		alert("That's an invalid value!\nPlease try again.");
 
-	// After all changes are done
-	canvas.renderAll();
-	atLimit = {
-		top: curr.getTop(),
-		left: curr.getLeft(),
-		scaleX: curr.getScaleX(),
-		scaleY: curr.getScaleY(),
-		angle: curr.getAngle(),
-	};
-	orig = fabric.util.object.clone(curr);
-	isSaved = false;
-}
 
 
 
 
 
 /************************ BOARD BOUNDARIES *************************/
-// Save original state for clone (on selection)
-// Triggers switchTab(), updates InfoWindow
-function objSelected(e) {
-	orig = fabric.util.object.clone(e.target);
-	atLimit = {
-		top: orig.getTop(),
-		left: orig.getLeft(),
-		scaleX: orig.getScaleX(),
-		scaleY: orig.getScaleY(),
-		angle: orig.getAngle(),
-	};
-	switchTab();
-	updateInfoWin(orig);
-}
-
-	// Save last acceptable state (on scale/rotate)
-	function setLimit(e){
-		var curr=e.target;
-		curr.setCoords();
+// Save last acceptable state (on scale/rotate)
+function setLimit(e){
+	var curr=e.target;
+	curr.setCoords();
 	// if not out of bounds, save state
 	// (the interval is not very fast, so this method is not so precise if you move fast)
 	if(!isOOB(curr)){
@@ -941,7 +872,7 @@ function checkOOB(e){
 		angle: curr.getAngle(),
 	};
 	// console.log("After checkOOB: " + JSON.stringify(atLimit));
-	updateInfoWin(orig);
+	//updateInfoWin(orig);
 	setDefSettings(curr);
 	curr.setCoords();
 	isSaved = false;
