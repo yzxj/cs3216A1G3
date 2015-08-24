@@ -39,7 +39,10 @@ var	drawingModeEl,
 	drawingShadowWidth,
 	drawingShadowOffset,
 	eraserModeEl,
-	clearE1;
+	undoEl,
+	redoEl,
+	clearEl,
+	downloadEl;
 
 
 
@@ -75,10 +78,17 @@ var	drawingModeEl,
 	drawingShadowOffset = $('drawing-shadow-offset');
 	eraserModeEl = $('eraser-mode');
     clearEl = $('clear-canvas');
+    undoEl = $('undo-btn');
+    redoEl = $('redo-btn');
+    downloadEl = $('download-btn');
+
 
 	clearEl.onclick = clearCanvas;
 	drawingModeEl.onclick = toggleDrawingMode;
 	eraserModeEl.onclick = toggleEraserMode;
+	undoEl.onclick = undo;
+	redoEl.onclick = redo;
+	downloadEl.onclick = downloadCanvas;
 
 	if (fabric.PatternBrush) {
 		var vLinePatternBrush = new fabric.PatternBrush(canvas);
@@ -274,6 +284,7 @@ function addCanvasListeners() {
 		'object:selected': onObjSelected,
 		'object:scaling': onObjScaling,
 		'object:rotating': onObjRotating,
+		'object:removed': onObjRemoved,
 		'path:created': onPathCreated,
 		'selection:cleared': onSelectionCleared,
 		'mouse:up': onMouseUp,
@@ -420,10 +431,32 @@ function removeIfPath(ev) {
 	// }
 	if (target !== undefined && target.type == "path") {
 		canvas.remove(target);
-		updateHistory();
 	}
 }
 
+
+function downloadCanvas() {
+	// Normally transparent because default dataURL is .png
+	var currBgCol = canvas.backgroundColor;
+	var currBgImg = canvas.backgroundImage;
+	canvas.setBackgroundColor('#FFFFFF');
+	
+	// Create temp link and activate download
+	var link = document.createElement("a");
+	link.download = "scribbl";
+	link.href = canvas.toDataURL();
+	link.click();
+
+	// Restore background state
+	// TODO: CONSIDER USING .JPG FORMAT
+	if (currBgCol) 
+		canvas.setBackgroundColor(currBgCol);
+	else if (currBgImg) 
+		canvas.setBackgroundImage(currBgImg);
+	else
+		canvas.setBackgroundColor(null);
+	canvas.renderAll();
+}
 
 
 function setLastObjUnselectable() {
