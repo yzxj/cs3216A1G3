@@ -102,6 +102,58 @@
   		right: 0;
   		position:absolute;
   	}
+   	#sidebarmenu{
+  		list-style-type: none;
+  		padding-left:20px;
+  		margin-left: 0px;
+  		}
+
+  	#sidebarmenu li button{
+  		height:  40px;
+  		width:  40px;  		
+  		background-repeat: no-repeat;
+  		background-size: 100%;
+  		background-size: 40px;
+  		margin-bottom: 20px;
+  		border-style:none;
+  	}
+
+  	#pentool{
+  		background:url("../images/pen tool.png");
+  		background-repeat: no-repeat;
+  		background-size: 100%;
+  		background-size: 40px;
+  	}
+  	#pentool .selected{
+  		background:url("../images/pen tool selected.png");
+  		background-repeat: no-repeat;
+  		background-size: 100%;
+  		background-size: 40px;
+  	}
+  	#eraser{
+  		background:url("../images/eraser.png");
+  	}
+  	.selected{
+  		background:url("../images/eraser selected.png");
+   	}
+ 	#clearcanvas{
+  		background:url("../images/clear canvas.png");
+  	}
+ 	#undo{
+  		background:url("../images/undo.png");
+  	}
+ 	#redo{
+  		background:url("../images/redo.png");
+  	}
+ 	#uploadimages{
+  		background:url("../images/upload image.png");
+  	}
+  	.thumb {
+    height: 75px;
+    border: 1px solid #000;
+    margin: 10px 5px 0 0;
+  }
+  	
   	</style>
 </head>
 <body>
@@ -112,8 +164,89 @@
 		</div>
 	</div>
 	
+	<!--************************* LEFT: Sidebar *************************-->
+<div id="myModal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+    	<div class="modal-header">
+    		<button type="button" class="close" data-dismiss="modal">&times;</button>
+    		<h4 class="modal-title">Upload Your Image</h4>
+    	</div>
+    	<div class="modal-body">
+    		<input type="file" id="files" name="files[]" multiple />
+    		<output id="list"></output>
+    	</div>
+    	<div class="modal-footer">
+    		<button type="button" class="btn btn-default" data-dismiss="modal" id="uploadimg">Upload</button>
+    		<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+    	</div>
+    </div>
+
+  </div>
+</div>
+
+<div id="myModaltext" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+    	<div class="modal-header">
+    		<button type="button" class="close" data-dismiss="modal">&times;</button>
+    		<h4 class="modal-title">Input the text</h4>
+    	</div>
+    	<div class="modal-body">
+    		<input id="textinput" name="files[]" multiple />
+    		<output id="list"></output>
+    	</div>
+    	<div class="modal-footer">
+    		<button type="button" class="btn btn-default" data-dismiss="modal" id="inputtext">OK</button>
+    		<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+    	</div>
+    </div>
+
+  </div>
+</div>
+
+	<div id = "sidebar" align = "left" class="col-md-4">
+		<ul id ="sidebarmenu" class="btn-group" data-toggle="buttons">
+			<li><div class="dropdown">
+				<button id = "pentool"  class="btn btn-default dropdown-toggle btn btn-primary active" data-toggle="dropdown"></button>
+				<ul class="dropdown-menu" role="menu" aria-labelledby="menu1" style="left: 40px; top: 0">
+					<li role="presentation">
+						<label for="drawing-line-width">Line width:</label>
+						<span class="info">22</span><input type="range" value="30" min="0" max="150" id="drawing-line-width"><br>
+					</li>
+					<li role="presentation" class="divider"></li>
+					<li role="presentation" class="dropdown-header">Dropdown header 2</li>
+
+					<li role="presentation">  
+						
+					</li>
+				</ul>
+			
+				</div>
+			</li>
+			<li><button id = "eraser" class="btn btn-primary"></button>
+			</li>
+			<li><button id = "clearcanvas" class="btn btn-primary"></button>
+			</li> 
+			<li><button id = "undo" class="btn btn-primary"></button>
+			</li>
+			<li><button id = "redo" class="btn btn-primary"></button>
+			</li>
+			<li><button id = "uploadimages" class="btn btn-primary" data-toggle="modal" data-target="#myModal"></button>
+			</li>
+			<li><button id = "text" class="btn btn-primary" data-toggle="modal" data-target="#myModaltext">text</button>
+			</li>			
+		</ul>
+
+	</div>
+
+
 	<!--************************* BODY *************************-->
-	<table class="center">
+	<table class="col-md-8">
 		<tr>
 			<!--************************* LEFT: Pinboard *************************-->
 			<td>
@@ -162,12 +295,12 @@
 							      <option>texture</option>
 							    </select><br>
 
-							    <label for="drawing-line-width">Line width:</label>
+<!-- 							    <label for="drawing-line-width">Line width:</label>
 							    <span class="info">22</span><input type="range" value="30" min="0" max="150" id="drawing-line-width"><br>
 
 							    <label for="drawing-color">Line color:</label>
 							    <input type="color" value="#005E7A" id="drawing-color"><br>
-
+ -->
 							    <label for="drawing-shadow-color">Shadow color:</label>
 							    <input type="color" value="#005E7A" id="drawing-shadow-color"><br>
 

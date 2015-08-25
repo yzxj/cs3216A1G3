@@ -85,6 +85,42 @@ var	drawingModeEl,
     imageBtnEl = $('addimage');
 
 
+     var penTool = $('pentool'),
+      eraserTool=$('eraser'),
+      clearCan=$('clearcanvas'),
+      undoButton=$('undo'),
+      redoButton=$('redo'),
+      uploadButton=$('uploadimages'),
+      textInput=$('inputtext');
+      dialogimage=$('dialog1');
+      // clearEl = $('clear-canvas');
+
+        document.getElementById('files').addEventListener('change', handleFileSelect, false);
+
+
+  textInput.onclick=function(){
+  	addText();
+  }
+
+
+  penTool.onclick = function(){
+  	toggleDrawingMode();
+  }
+
+  eraserTool.onclick = function(){
+  	toggleEraserMode();
+
+  }
+
+  // clearCan.Click(function(){clearCanvas();});
+  clearCan.onclick =function() { clearCanvas();
+
+  }
+  undoButton.onclick = function(){ undo();}
+  redoButton.onclick = function(){ redo();}
+
+
+
 	clearEl.onclick = clearCanvas;
 	drawingModeEl.onclick = toggleDrawingMode;
 	eraserModeEl.onclick = toggleEraserMode;
