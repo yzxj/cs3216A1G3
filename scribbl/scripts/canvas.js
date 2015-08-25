@@ -95,7 +95,7 @@ var	drawingModeEl,
       dialogimage=$('dialog1');
       // clearEl = $('clear-canvas');
 
-        document.getElementById('files').addEventListener('change', handleFileSelect, false);
+        // document.getElementById('uploadimg').addEventListener('change', uploadImage, false);
 
 
   textInput.onclick=function(){
@@ -118,7 +118,7 @@ var	drawingModeEl,
   }
   undoButton.onclick = function(){ undo();}
   redoButton.onclick = function(){ redo();}
-
+document.getElementById('uploadimages').onclick = uploadImage;
 
 
 	clearEl.onclick = clearCanvas;
@@ -859,7 +859,7 @@ function setDefSettings(curr){	// *** consider adding these features to toJSON(o
 function addText() {
 	disableDrawAndEraser();
 
-	var input = document.getElementById("newtext");
+	var input = document.getElementById("textinput");
 	var text = input.value;
 	if(text == null || text.trim() == ""){
 		text = "Click to edit";
