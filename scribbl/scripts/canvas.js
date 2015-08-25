@@ -78,47 +78,42 @@ var	drawingModeEl,
 	drawingShadowWidth = $('drawing-shadow-width'),
 	drawingShadowOffset = $('drawing-shadow-offset');
 	eraserModeEl = $('eraser-mode');
-    clearEl = $('clear-canvas');
-    undoEl = $('undo-btn');
-    redoEl = $('redo-btn');
-    downloadEl = $('download-btn');
-    imageBtnEl = $('addimage');
+	clearEl = $('clear-canvas');
+	undoEl = $('undo-btn');
+	redoEl = $('redo-btn');
+	downloadEl = $('download-btn');
+	imageBtnEl = $('addimage');
 
 
-     var penTool = $('pentool'),
-      eraserTool=$('eraser'),
-      clearCan=$('clearcanvas'),
-      undoButton=$('undo'),
-      redoButton=$('redo'),
-      uploadButton=$('uploadimages'),
-      textInput=$('inputtext');
-      dialogimage=$('dialog1');
-      // clearEl = $('clear-canvas');
+	var penTool = $('pentool'),
+		eraserTool=$('eraser'),
+		clearCan=$('clearcanvas'),
+		undoButton=$('undo'),
+		redoButton=$('redo'),
+		uploadButton=$('uploadimages'),
+		textInput=$('inputtext');
 
-        // document.getElementById('uploadimg').addEventListener('change', uploadImage, false);
-
-
-  textInput.onclick=function(){
-  	addText();
-  }
+	textInput.onclick=function(){
+		addText();
+	}
 
 
-  penTool.onclick = function(){
-  	toggleDrawingMode();
-  }
+	penTool.onclick = function(){
+		toggleDrawingMode();
+	}
 
-  eraserTool.onclick = function(){
-  	toggleEraserMode();
+	eraserTool.onclick = function(){
+		toggleEraserMode();
 
-  }
+	}
 
-  // clearCan.Click(function(){clearCanvas();});
-  clearCan.onclick =function() { clearCanvas();
+	// clearCan.Click(function(){clearCanvas();});
+	clearCan.onclick =function() { clearCanvas();
 
-  }
-  undoButton.onclick = function(){ undo();}
-  redoButton.onclick = function(){ redo();}
-document.getElementById('uploadimages').onclick = uploadImage;
+	}
+	undoButton.onclick = function(){ undo();}
+	redoButton.onclick = function(){ redo();}
+	uploadButton.onclick = openUploader;
 
 
 	clearEl.onclick = clearCanvas;
@@ -127,555 +122,145 @@ document.getElementById('uploadimages').onclick = uploadImage;
 	undoEl.onclick = undo;
 	redoEl.onclick = redo;
 	downloadEl.onclick = downloadCanvas;
-	imageBtnEl.onclick = uploadImage; // imageBox
+	imageBtnEl.onclick = openUploader; // imageBox
 
 	if (fabric.PatternBrush) {
 		var vLinePatternBrush = new fabric.PatternBrush(canvas);
 		vLinePatternBrush.getPatternSrc = function() {
 
-		var patternCanvas = fabric.document.createElement('canvas');
-		patternCanvas.width = patternCanvas.height = 10;
-		var ctx = patternCanvas.getContext('2d');
+			var patternCanvas = fabric.document.createElement('canvas');
+			patternCanvas.width = patternCanvas.height = 10;
+			var ctx = patternCanvas.getContext('2d');
 
-		ctx.strokeStyle = this.color;
-		ctx.lineWidth = 5;
-		ctx.beginPath();
-		ctx.moveTo(0, 5);
-		ctx.lineTo(10, 5);
-		ctx.closePath();
-		ctx.stroke();
+			ctx.strokeStyle = this.color;
+			ctx.lineWidth = 5;
+			ctx.beginPath();
+			ctx.moveTo(0, 5);
+			ctx.lineTo(10, 5);
+			ctx.closePath();
+			ctx.stroke();
 
-		return patternCanvas;
+			return patternCanvas;
+		};
+
+		var hLinePatternBrush = new fabric.PatternBrush(canvas);
+		hLinePatternBrush.getPatternSrc = function() {
+
+			var patternCanvas = fabric.document.createElement('canvas');
+			patternCanvas.width = patternCanvas.height = 10;
+			var ctx = patternCanvas.getContext('2d');
+
+			ctx.strokeStyle = this.color;
+			ctx.lineWidth = 5;
+			ctx.beginPath();
+			ctx.moveTo(5, 0);
+			ctx.lineTo(5, 10);
+			ctx.closePath();
+			ctx.stroke();
+
+			return patternCanvas;
+		};
+
+		var squarePatternBrush = new fabric.PatternBrush(canvas);
+		squarePatternBrush.getPatternSrc = function() {
+
+			var squareWidth = 10, squareDistance = 2;
+
+			var patternCanvas = fabric.document.createElement('canvas');
+			patternCanvas.width = patternCanvas.height = squareWidth + squareDistance;
+			var ctx = patternCanvas.getContext('2d');
+
+			ctx.fillStyle = this.color;
+			ctx.fillRect(0, 0, squareWidth, squareWidth);
+
+			return patternCanvas;
+		};
+
+		var diamondPatternBrush = new fabric.PatternBrush(canvas);
+		diamondPatternBrush.getPatternSrc = function() {
+
+			var squareWidth = 10, squareDistance = 5;
+			var patternCanvas = fabric.document.createElement('canvas');
+			var rect = new fabric.Rect({
+				width: squareWidth,
+				height: squareWidth,
+				angle: 45,
+				fill: this.color
+			});
+
+			var canvasWidth = rect.getBoundingRectWidth();
+
+			patternCanvas.width = patternCanvas.height = canvasWidth + squareDistance;
+			rect.set({ left: canvasWidth / 2, top: canvasWidth / 2 });
+
+			var ctx = patternCanvas.getContext('2d');
+			rect.render(ctx);
+
+			return patternCanvas;
+		};
+
+		var img = new Image();
+		img.src = '../images/testPattern.png';
+
+		var texturePatternBrush = new fabric.PatternBrush(canvas);
+		texturePatternBrush.source = img;
+	}
+
+	$('drawing-mode-selector').onchange = function() {
+
+		if (this.value === 'hline') {
+			canvas.freeDrawingBrush = vLinePatternBrush;
+		}
+		else if (this.value === 'vline') {
+			canvas.freeDrawingBrush = hLinePatternBrush;
+		}
+		else if (this.value === 'square') {
+			canvas.freeDrawingBrush = squarePatternBrush;
+		}
+		else if (this.value === 'diamond') {
+			canvas.freeDrawingBrush = diamondPatternBrush;
+		}
+		else if (this.value === 'texture') {
+			canvas.freeDrawingBrush = texturePatternBrush;
+		}
+		else {
+			canvas.freeDrawingBrush = new fabric[this.value + 'Brush'](canvas);
+		}
+
+		if (canvas.freeDrawingBrush) {
+			canvas.freeDrawingBrush.color = drawingColorEl.value;
+			canvas.freeDrawingBrush.width = parseInt(drawingLineWidthEl.value, 10) || 1;
+			canvas.freeDrawingBrush.shadowBlur = parseInt(drawingShadowWidth.value, 10) || 0;
+		}
 	};
 
-    var hLinePatternBrush = new fabric.PatternBrush(canvas);
-    hLinePatternBrush.getPatternSrc = function() {
+	drawingColorEl.onchange = function() {
+		canvas.freeDrawingBrush.color = this.value;
+	};
+	drawingShadowColorEl.onchange = function() {
+		canvas.freeDrawingBrush.shadowColor = this.value;
+	};
+	drawingLineWidthEl.onchange = function() {
+		canvas.freeDrawingBrush.width = parseInt(this.value, 10) || 1;
+		this.previousSibling.innerHTML = this.value;
+	};
+	drawingShadowWidth.onchange = function() {
+		canvas.freeDrawingBrush.shadowBlur = parseInt(this.value, 10) || 0;
+		this.previousSibling.innerHTML = this.value;
+	};
+	drawingShadowOffset.onchange = function() {
+		canvas.freeDrawingBrush.shadowOffsetX =
+		canvas.freeDrawingBrush.shadowOffsetY = parseInt(this.value, 10) || 0;
+		this.previousSibling.innerHTML = this.value;
+	};
 
-      var patternCanvas = fabric.document.createElement('canvas');
-      patternCanvas.width = patternCanvas.height = 10;
-      var ctx = patternCanvas.getContext('2d');
-
-      ctx.strokeStyle = this.color;
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.moveTo(5, 0);
-      ctx.lineTo(5, 10);
-      ctx.closePath();
-      ctx.stroke();
-
-      return patternCanvas;
-    };
-
-    var squarePatternBrush = new fabric.PatternBrush(canvas);
-    squarePatternBrush.getPatternSrc = function() {
-
-      var squareWidth = 10, squareDistance = 2;
-
-      var patternCanvas = fabric.document.createElement('canvas');
-      patternCanvas.width = patternCanvas.height = squareWidth + squareDistance;
-      var ctx = patternCanvas.getContext('2d');
-
-      ctx.fillStyle = this.color;
-      ctx.fillRect(0, 0, squareWidth, squareWidth);
-
-      return patternCanvas;
-    };
-
-    var diamondPatternBrush = new fabric.PatternBrush(canvas);
-    diamondPatternBrush.getPatternSrc = function() {
-
-      var squareWidth = 10, squareDistance = 5;
-      var patternCanvas = fabric.document.createElement('canvas');
-      var rect = new fabric.Rect({
-        width: squareWidth,
-        height: squareWidth,
-        angle: 45,
-        fill: this.color
-      });
-
-      var canvasWidth = rect.getBoundingRectWidth();
-
-      patternCanvas.width = patternCanvas.height = canvasWidth + squareDistance;
-      rect.set({ left: canvasWidth / 2, top: canvasWidth / 2 });
-
-      var ctx = patternCanvas.getContext('2d');
-      rect.render(ctx);
-
-      return patternCanvas;
-    };
-
-    var img = new Image();
-    img.src = '../images/testPattern.png';
-
-    var texturePatternBrush = new fabric.PatternBrush(canvas);
-    texturePatternBrush.source = img;
-  }
-
-  $('drawing-mode-selector').onchange = function() {
-
-    if (this.value === 'hline') {
-      canvas.freeDrawingBrush = vLinePatternBrush;
-    }
-    else if (this.value === 'vline') {
-      canvas.freeDrawingBrush = hLinePatternBrush;
-    }
-    else if (this.value === 'square') {
-      canvas.freeDrawingBrush = squarePatternBrush;
-    }
-    else if (this.value === 'diamond') {
-      canvas.freeDrawingBrush = diamondPatternBrush;
-    }
-    else if (this.value === 'texture') {
-      canvas.freeDrawingBrush = texturePatternBrush;
-    }
-    else {
-      canvas.freeDrawingBrush = new fabric[this.value + 'Brush'](canvas);
-    }
-
-    if (canvas.freeDrawingBrush) {
-      canvas.freeDrawingBrush.color = drawingColorEl.value;
-      canvas.freeDrawingBrush.width = parseInt(drawingLineWidthEl.value, 10) || 1;
-      canvas.freeDrawingBrush.shadowBlur = parseInt(drawingShadowWidth.value, 10) || 0;
-    }
-  };
-
-  drawingColorEl.onchange = function() {
-    canvas.freeDrawingBrush.color = this.value;
-  };
-  drawingShadowColorEl.onchange = function() {
-    canvas.freeDrawingBrush.shadowColor = this.value;
-  };
-  drawingLineWidthEl.onchange = function() {
-    canvas.freeDrawingBrush.width = parseInt(this.value, 10) || 1;
-    this.previousSibling.innerHTML = this.value;
-  };
-  drawingShadowWidth.onchange = function() {
-    canvas.freeDrawingBrush.shadowBlur = parseInt(this.value, 10) || 0;
-    this.previousSibling.innerHTML = this.value;
-  };
-  drawingShadowOffset.onchange = function() {
-    canvas.freeDrawingBrush.shadowOffsetX =
-    canvas.freeDrawingBrush.shadowOffsetY = parseInt(this.value, 10) || 0;
-    this.previousSibling.innerHTML = this.value;
-  };
-
-  if (canvas.freeDrawingBrush) {
-    canvas.freeDrawingBrush.color = drawingColorEl.value;
-    canvas.freeDrawingBrush.width = parseInt(drawingLineWidthEl.value, 10) || 1;
-    canvas.freeDrawingBrush.shadowBlur = 0;
-  }
+	if (canvas.freeDrawingBrush) {
+		canvas.freeDrawingBrush.color = drawingColorEl.value;
+		canvas.freeDrawingBrush.width = parseInt(drawingLineWidthEl.value, 10) || 1;
+		canvas.freeDrawingBrush.shadowBlur = 0;
+	}
 })();
 
-function toggleDrawingMode(calledByUser) {
-	// When called by onclick, calledByUser is actually a mouseEvent
-	// calledByUser = calledByUser || false;
-	// calledByUser = (typeof calledByUser == 'boolean') ? calledByUser : true;
-	
-	if (inEraserMode /*&& calledByUser*/) {
-		toggleEraserMode();
-	}
-
-	canvas.isDrawingMode = !canvas.isDrawingMode;
-	if (canvas.isDrawingMode) {
-		drawingModeEl.innerHTML = 'Stop Drawing';
-		drawingOptionsEl.style.display = '';
-
-		canvas.discardActiveObject();
-	} else {
-		drawingModeEl.innerHTML = 'Draw';
-		drawingOptionsEl.style.display = 'none';
-	}
-}
-
-
-var inEraserMode = false;
-function toggleEraserMode(calledByUser) {
-	if (canvas.isDrawingMode) {
-		toggleDrawingMode();
-	}
-
-	inEraserMode = !inEraserMode;
-	if (inEraserMode) {
-		eraserModeEl.innerHTML = 'Stop Erasing';
-		canvas.defaultCursor = 'cell';
-
-		canvas.discardActiveObject();
-		canvas.selection = false;
-		canvas.forEachObject(function(o) {
-			o.selectable = false;
-		});
-	} else {
-		eraserModeEl.innerHTML = 'Eraser';
-		canvas.defaultCursor = 'default';
-		canvas.selection = true;
-		canvas.forEachObject(function(o) {
-			if(o.type !== 'path')
-				o.selectable = true;
-		});
-	}
-}
-
-function disableDrawAndEraser() {
-	if (canvas.isDrawingMode) 
-		toggleDrawingMode();
-	else if (inEraserMode) 
-		toggleEraserMode();
-}
-
-
-function addCanvasListeners() {
-	canvas.on({
-		'object:added' : onObjAdded,
-		'object:modified': onObjModified,
-		'object:selected': onObjSelected,
-		'object:scaling': onObjScaling,
-		'object:rotating': onObjRotating,
-		'object:removed': onObjRemoved,
-		'path:created': onPathCreated,
-		'selection:cleared': onSelectionCleared,
-		'mouse:up': onMouseUp,
-		'mouse:down': onMouseDown,
-		'mouse:move': onMouseMove,
-	});
-	// TODO: Add listener to CUT OFF drawings to canvas area
-	// Try canvas.clipTo?
-	// TODO: Add export to dataURL, which may need clipping also
-}
-
-function addWindowListeners() {
-	$(document).on('keydown', function(e){
-		if(e.ctrlKey) {  // If ctrl is pressed
-			switch(e.which){
-				case 89: // Y
-					redo();
-					e.preventDefault();
-					break;
-				case 90: // Z
-					undo();
-					e.preventDefault();
-					break;
-			}
-		} else {
-			switch(e.which) {
-				case 46: // del
-					deleteActiveObj();
-					break;
-			}
-		}
-	});
-	// window.onbeforeunload = function(e){	// Page-leave functionality
-	// 	if(!isSaved)
-	// 		saveCanvas(false);
-	// 	timedOut(false);
-	// };
-}
-
-
-/***** LISTENER FUNCTIONS *****/
-
-function onObjAdded(e) {
-	if (histWorking) {
-		// Object "type"s seem to only appear AFTER a canvas
-		// is loaded from a save. This section of code is a workaround
-		// to ensure that brush strokes are not selectable.
-		var curr = canvasLastObj();
-		if (curr.type == "path")
-			setLastObjUnselectable();
-	} else {
-		updateHistory();
-		loadCurr();
-	}
-}
-
-function onObjModified(e) {
-	checkOOB(e);
-	updateHistory();
-}
-
-function onObjRemoved(e) {
-	updateHistory();
-}
-
-function onObjScaling(e) {
-	setLimit(e);
-}
-
-function onObjRotating(e) {
-	setLimit(e);
-}
-
-function onPathCreated(e) {
-	setLastObjUnselectable();
-}
-
-// Save original state for clone (on selection)
-// Triggers switchTab(), updates InfoWindow
-function onObjSelected(e) {
-	// TODO/NOTE: UNTOUCHED FROM PREV PROJECT
-	orig = fabric.util.object.clone(e.target);
-	atLimit = {
-		top: orig.getTop(),
-		left: orig.getLeft(),
-		scaleX: orig.getScaleX(),
-		scaleY: orig.getScaleY(),
-		angle: orig.getAngle(),
-	};
-	switchTab();
-	//updateInfoWin(orig);
-}
-
-function onSelectionCleared() {
-	if (!canvas.isDrawingMode) {
-		resetInfoWin();
-		switchTab("create");
-	}
-}
-
-
-function onMouseDown(ev) {
-	if (inEraserMode) {
-		erase(ev);
-	}
-}
-
-function onMouseMove(ev) {
-	if (inEraserMode) {
-		erase(ev);
-	}
-}
-
-function onMouseUp(ev) {
-	if (inEraserMode) {
-		erase(ev);
-	}
-}
-
-var erasing = false;
-function erase(ev) {
-	switch(ev.e.type.toLowerCase()) {
-		case 'mousedown':
-			erasing = true;
-			removeIfPath(ev);
-			break;
-		case 'mousemove':
-			if(erasing)
-				removeIfPath(ev);
-			break;
-		case 'mouseup':
-			erasing = false;
-			break;
-	}
-}
-
-function removeIfPath(ev) {
-	var mouseEv = ev.e;
-	var target = canvas.findTarget(mouseEv, true);
-	// console.log(target);
-	// if (target !== undefined && target.type == "path") {
-	// 	var cursorPt = new fabric.Point(mouseEv.x, mouseEv.y);
-	// 	console.log(target.getLocalPointer(ev.e, cursorPt));
-	// 	var test = target.getLocalPointer(ev.e, cursorPt);
-	// 	if(target.containsPoint(test)) {
-	// 		console.log("hit");
-	// 		canvas.remove(target);
-	// 		updateHistory();
-	// 	}
-	// }
-	if (target !== undefined && target.type == "path") {
-		canvas.remove(target);
-	}
-}
-
-
-function downloadCanvas() {
-	// Normally transparent because default dataURL is .png
-	var currBgCol = canvas.backgroundColor;
-	var currBgImg = canvas.backgroundImage;
-	canvas.setBackgroundColor('#FFFFFF');
-	canvas.discardActiveObject();
-	
-	// Create temp link and activate download
-	var link = document.createElement("a");
-	link.download = "scribbl";
-	link.href = canvas.toDataURL();
-	link.click();
-
-	// Restore background state
-	// TODO: CONSIDER USING .JPG FORMAT
-	if (currBgCol) 
-		canvas.setBackgroundColor(currBgCol);
-	else if (currBgImg) 
-		canvas.setBackgroundImage(currBgImg);
-	else
-		canvas.setBackgroundColor(null);
-	canvas.renderAll();
-}
-
-
-function setLastObjUnselectable() {
-	// Can't seem to determine if an object is a drawing
-	// Text objects turned up as 'path's as well.
-	canvasLastObj().selectable = false;
-}
-
-
-// HISTORY FUNCTIONS
-var histList;
-var histIndex;
-var histMax;
-var histWorking;
-function initHistory() {
-	// May not be necessary, this just makes
-	// sure the canvas is initialised first
-	histList = [JSON.stringify(canvas)];
-	histIndex = 0;
-	histMax = 49;
-	histWorking = false;
-}
-function updateHistory() {
-	// Objects added on canvas load are 
-	// considered "object:added"; this is a safety net
-	// for when undo or redo is called
-	if (histWorking) return;
-
-	// Remove all items after histIndex
-	histLast = histList.length - 1;
-	if (histLast > histIndex) {
-		var numToRemove = histLast - histIndex;
-		histList.splice(histIndex+1,numToRemove);
-	}
-
-	// Add item to list, taking note
-	// to only keep histMax+1 items
-	if (histIndex==histMax) {
-		histList.shift();
-	} else {
-		histIndex++;
-	}
-	histList.push(JSON.stringify(canvas));
-	console.log(histList);
-}
-// A very hack-ish workaround to ensure consistent
-// behaviour of objects, esp. object types
-// i.e. always work with data loaded from save
-function loadCurr() {
-	histWorking = true;
-	var activeObj = canvas.getActiveObject();
-	//canvas.loadFromJSON(histList[histIndex]);
-	// Seems to work fine because eraser sets all as unselectable
-	// and then resets only non-path items as selectable, so 
-	// the call from onObjAdded is not actually as important.
-	// (but the pathcreated call still is)
-	// TODO: REMOVE
-	canvas.renderAll();
-	if(activeObj) canvas.setActiveObject(activeObj);
-	histWorking = false;
-}
-function undo() {
-	if(!histWorking) {
-		if (histIndex>0) {
-			// Tell updateHistory to ignore actions
-			histWorking = true;
-			canvas.loadFromJSON(histList[--histIndex], function() {
-				canvas.renderAll();
-				histWorking = false;
-			});
-			
-		}
-	}
-}
-function redo() {
-	if(!histWorking) {
-		histLast = histList.length - 1;
-		if (histIndex<histLast) {
-			// Tell updateHistory to ignore actions
-			histWorking = true;
-			// canvas.loadFromJSON(histList[++histIndex]);
-			// // TODO: Fix issue with image repeating undoHistory
-			// // Tried callbacks, but callbacks cause bugs
-			// // if used too fast (callbacks not done)
-			// canvas.renderAll();
-			canvas.loadFromJSON(histList[++histIndex], function() {
-				canvas.renderAll();
-				histWorking = false;
-			});
-			// histWorking = false;
-			// HISTWORKIG IS A LOUSY SEMAPHORE
-		}
-	}
-}
-
-function canvasLastObj() {
-	return canvas._objects[canvas._objects.length-1];
-}
-
-function deleteActiveObj() {
-	canvas.remove(canvas.getActiveObject());
-	canvas.discardActiveObject();
-}
-
-function shareToFb() {
-	// TODO: https://developers.facebook.com/docs/sharing/reference/share-dialog
-	// TODO: https://developers.facebook.com/docs/sharing/best-practices
-	// FB.ui({
-	// 	method: 'share',
-	// 	href: 'https://developers.facebook.com/docs/',
-	// }, function(response){});
-
-	// TODO: Implement friend checks when people visit that link, so that
-	// people can't just randomly try finding pages? 
-}
-
-var uploader;
-function uploadImage() {
-	uploader = document.createElement("input");
-	uploader.type = 'file';
-	uploader.accept = 'image/*';
-	uploader.multiple = false;		// TODO: Consider allowing multiple
-	uploader.onchange = readImage;
-	uploader.click();
-}
-
-function readImage(element) {
-	var newImgDataUrl = "";
-	var file = uploader.files[0];
-	var reader  = new FileReader();
-
-	reader.onloadend = function() {
-		fabric.Image.fromURL(reader.result, function(img){
-			if(img.getHeight()>img.getWidth()){
-				img.scale((canvas.getHeight()/img.getHeight())/2);
-			}else{
-				img.scale((canvas.getWidth()/img.getWidth())/2);
-			}
-			img.set("left", canvas.getWidth()/2);
-			img.set("top", canvas.getHeight()/2);
-			setDefSettings(img); // TODO: check if necessary
-			canvas.add(img);
-
-			disableDrawAndEraser();
-			canvas.setActiveObject(img);
-		});
-	}
-
-	if (file) {
-		reader.readAsDataURL(file);
-	}
-	uploader.removeAttribute("onchange");
-}
-
-
-
-
-
-function promptBoardEmpty() {
-	var data = jQuery.parseJSON(lastSave);
-	if(data.objects == ""){
-		var input = document.getElementById("newblkcol");
-		alert("It appears your board is empty.\nPerhaps you would like to start by adding a block?");
-		input.focus();
-	}
-}
 function initColPickers(){
 	// Initialise Colour Pickers
 	// For the time being repetitive because i can't get the loop counter [i] into the onchange function
@@ -773,6 +358,470 @@ function initColPickers(){
 
 
 
+/************************ BOARD LISTENERS *************************/
+function addWindowListeners() {
+	$(document).on('keydown', function(e){
+		if(e.ctrlKey) {  // If ctrl is pressed
+			switch(e.which){
+				case 89: // Y
+				redo();
+				e.preventDefault();
+				break;
+				case 90: // Z
+				undo();
+				e.preventDefault();
+				break;
+			}
+		} else {
+			switch(e.which) {
+				case 46: // del
+				deleteActiveObj();
+				break;
+			}
+		}
+	});
+	// window.onbeforeunload = function(e){	// Page-leave functionality
+	// 	if(!isSaved)
+	// 		saveCanvas(false);
+	// 	timedOut(false);
+	// };
+}
+
+function addCanvasListeners() {
+	canvas.on({
+		'object:added' : onObjAdded,
+		'object:modified': onObjModified,
+		'object:scaling': onObjScaling,
+		'object:rotating': onObjRotating,
+		'object:removed': onObjRemoved,
+		'object:selected': onObjSelected,
+		'path:created': onPathCreated,
+		'selection:cleared': onSelectionCleared,
+		'mouse:up': onMouseUp,
+		'mouse:down': onMouseDown,
+		'mouse:move': onMouseMove,
+	});
+}
+
+function onObjAdded(e) {
+	if (histWorking) {
+		// Object "type"s seem to only appear AFTER a canvas
+		// is loaded from a save. This section of code is a workaround
+		// to ensure that brush strokes are not selectable.
+		var curr = canvasLastObj();
+		if (curr.type == "path")
+			setLastObjUnselectable();
+	} else {
+		updateHistory();
+	}
+}
+
+function onObjModified(e) {
+	checkOOB(e);
+	updateHistory();
+}
+
+function onObjRemoved(e) {
+	updateHistory();
+}
+
+function onObjScaling(e) {
+	setLimit(e);
+}
+
+function onObjRotating(e) {
+	setLimit(e);
+}
+
+// Save original state for clone (on selection)
+// Triggers switchTab(), updates InfoWindow
+function onObjSelected(e) {
+	// TODO/NOTE: UNTOUCHED FROM PREV PROJECT
+	orig = fabric.util.object.clone(e.target);
+	atLimit = {
+		top: orig.getTop(),
+		left: orig.getLeft(),
+		scaleX: orig.getScaleX(),
+		scaleY: orig.getScaleY(),
+		angle: orig.getAngle(),
+	};
+	switchTab();
+	//updateInfoWin(orig);
+}
+
+function onPathCreated(e) {
+	setLastObjUnselectable();
+}
+
+function onSelectionCleared() {
+	if (!canvas.isDrawingMode) {
+		resetInfoWin();
+		switchTab("create");
+	}
+}
+
+function onMouseDown(ev) {
+	if (inEraserMode) {
+		erase(ev);
+	}
+}
+
+function onMouseMove(ev) {
+	if (inEraserMode) {
+		erase(ev);
+	}
+}
+
+function onMouseUp(ev) {
+	if (inEraserMode) {
+		erase(ev);
+	}
+}
+
+
+
+
+
+/************************ FREEDRAW/ERASE FUNCTIONS *************************/
+function toggleDrawingMode() {
+	if (canvas.isDrawingMode) {
+		drawingModeOff();
+	} else {
+		drawingModeOn();
+	}
+}
+
+function drawingModeOn() {
+	eraserModeOff();
+	
+	canvas.isDrawingMode = true;
+	drawingModeEl.innerHTML = 'Stop Drawing';
+	drawingOptionsEl.style.display = '';
+
+	canvas.discardActiveObject();
+}
+
+function drawingModeOff() {
+	canvas.isDrawingMode = false;
+
+	drawingModeEl.innerHTML = 'Draw';
+	drawingOptionsEl.style.display = 'none';
+}
+
+
+var inEraserMode = false;
+function toggleEraserMode() {
+	if (inEraserMode) {
+		eraserModeOff();
+	} else {
+		eraserModeOn();
+	}
+}
+
+function eraserModeOn() {
+	drawingModeOff();
+
+	inEraserMode = true;
+	eraserModeEl.innerHTML = 'Stop Erasing';
+	canvas.defaultCursor = 'cell';
+
+	canvas.discardActiveObject();
+	canvas.selection = false;
+	canvas.forEachObject(function(o) {
+		o.selectable = false;
+	});
+}
+
+function eraserModeOff() {
+	inEraserMode = false;
+
+	eraserModeEl.innerHTML = 'Eraser';
+	canvas.defaultCursor = 'default';
+
+	canvas.forEachObject(function(o) {
+		if(o.type !== 'path')
+			o.selectable = true;
+	});
+}
+
+function disableDrawAndEraser() {
+	drawingModeOff();
+	eraserModeOff();
+}
+
+var erasing = false;
+function erase(ev) {
+	switch(ev.e.type.toLowerCase()) {
+		case 'mousedown':
+		erasing = true;
+		removeIfPath(ev);
+		break;
+		case 'mousemove':
+		if(erasing)
+			removeIfPath(ev);
+		break;
+		case 'mouseup':
+		erasing = false;
+		break;
+	}
+}
+
+function removeIfPath(ev) {
+	var mouseEv = ev.e;
+	var target = canvas.findTarget(mouseEv, true);
+	// console.log(target);
+	// if (target !== undefined && target.type == "path") {
+	// 	var cursorPt = new fabric.Point(mouseEv.x, mouseEv.y);
+	// 	console.log(target.getLocalPointer(ev.e, cursorPt));
+	// 	var test = target.getLocalPointer(ev.e, cursorPt);
+	// 	if(target.containsPoint(test)) {
+	// 		console.log("hit");
+	// 		canvas.remove(target);
+	// 		updateHistory();
+	// 	}
+	// }
+	// TODO: Improve to only erase on collision
+	if (target !== undefined && target.type == "path") {
+		canvas.remove(target);
+	}
+}
+
+
+
+
+
+/************************ IMAGE UPLOAD FUNCTIONS *************************/
+var uploader;
+function initUploader() {
+	uploader = document.createElement("input");
+	uploader.type = 'file';
+	uploader.accept = 'image/*';
+	uploader.multiple = false;
+	// TODO: Consider allowing multiple
+}
+
+// Inits uploader if not already done
+// Then opens upload window
+function openUploader() {
+	if (!uploader) {
+		initUploader();
+	}
+	uploader.onchange = readUploader;
+	uploader.click();
+}
+
+// Reads file from uploader and acts on it
+function readUploader(element) {
+	var newImgDataUrl = "";
+	var file = uploader.files[0];
+	var reader  = new FileReader();
+
+	reader.onloadend = function() {
+		var dataUrl = reader.result;
+		if (isValidImage(dataUrl)) {
+			fabric.Image.fromURL(reader.result, addImageToCanvas);
+		} else {
+			alert("Invalid file! We only accept png, gif, bmp and jpg!");
+		}
+	}
+
+	// Calls the above listener when done reading
+	if (file) {
+		reader.readAsDataURL(file);
+	}
+
+	uploader.removeAttribute("onchange");
+}
+
+function addImageToCanvas(img) {
+	disableDrawAndEraser();
+
+	if (img.getHeight()>img.getWidth()){
+		img.scale((canvas.getHeight()/img.getHeight())/2);
+	} else {
+		img.scale((canvas.getWidth()/img.getWidth())/2);
+	}
+	img.set("left", canvas.getWidth()/2);
+	img.set("top", canvas.getHeight()/2);
+	setDefSettings(img); // TODO: check if necessary
+
+	try {
+		canvas.add(img);
+		canvas.setActiveObject(img);
+	} catch(err) {
+		undo();
+		updateHistory();
+		alert("Invalid file!");
+	}
+}
+
+function isValidImage(dataUrl) {
+	var fHeader = getFHeaderFromDataUrl(dataUrl);
+
+	// Values from https://en.wikipedia.org/wiki/List_of_file_signatures
+	switch(fHeader) {
+		case "89504e47": 	// png
+		case "47494638": 	// gif
+		case "ffd8ffe0": 	// jpg
+		case "ffd8ffe1": 	// jpg
+		case "ffd8ffe2": 	// jpg
+			return true;
+	}
+
+	if (fHeader == "424D")	// bmp
+		return true;
+
+	return false;
+}
+
+// Adapted from http://stackoverflow.com/questions/6850276/how-to-convert-dataurl-to-file-object-in-javascript
+function getFHeaderFromDataUrl(dataUrl) {
+	var arr = dataUrl.split(',');
+	var mime = arr[0].match(/:(.*?);/)[1];
+	var bstr = atob(arr[1]);
+	var n = bstr.length;
+	// var u8arr = new Uint8Array(n); originally to store bstr.charCodeAt(n)
+
+	var hexStr = "";
+	for (var i=0; i<4 && i<n; i++) {
+		hexStr += bstr.charCodeAt(i).toString(16);
+	}
+
+	return hexStr;
+}
+
+
+
+
+/************************ CANVAS/MISC FUNCTIONS *************************/
+function setLastObjUnselectable() {
+	// Can't seem to determine if an object is a drawing
+	// Text objects turned up as 'path's as well.
+	canvasLastObj().selectable = false;
+}
+
+function canvasLastObj() {
+	return canvas._objects[canvas._objects.length-1];
+}
+
+function deleteActiveObj() {
+	canvas.remove(canvas.getActiveObject());
+	canvas.discardActiveObject();
+}
+
+function downloadCanvas() {
+	// Normally transparent because default dataURL is .png
+	var currBgCol = canvas.backgroundColor;
+	var currBgImg = canvas.backgroundImage;
+	canvas.setBackgroundColor('#FFFFFF');
+	canvas.discardActiveObject();
+	
+	// Create temp link and activate download
+	var link = document.createElement("a");
+	link.download = "scribbl";
+	link.href = canvas.toDataURL();
+	link.click();
+
+	// Restore background state
+	// TODO: CONSIDER USING .JPG FORMAT
+	if (currBgCol) 
+		canvas.setBackgroundColor(currBgCol);
+	else if (currBgImg) 
+		canvas.setBackgroundImage(currBgImg);
+	else
+		canvas.setBackgroundColor(null);
+	canvas.renderAll();
+}
+
+
+
+
+
+/************************ HISTORY FUNCTIONS *************************/
+var histList;
+var histIndex;
+var histMax;
+var histWorking;
+function initHistory() {
+	// May not be necessary, this just makes
+	// sure the canvas is initialised first
+	histList = [JSON.stringify(canvas)];
+	histIndex = 0;
+	histMax = 49;
+	histWorking = false;
+}
+
+function updateHistory() {
+	// Objects added on canvas load are 
+	// considered "object:added"; this is a safety net
+	// for when undo or redo is called
+	if (histWorking) return;
+
+	// Remove all items after histIndex
+	histLast = histList.length - 1;
+	if (histLast > histIndex) {
+		var numToRemove = histLast - histIndex;
+		histList.splice(histIndex+1,numToRemove);
+	}
+
+	// Add item to list, taking note
+	// to only keep histMax+1 items
+	if (histIndex==histMax) {
+		histList.shift();
+	} else {
+		histIndex++;
+	}
+	histList.push(JSON.stringify(canvas));
+}
+
+function undo() {
+	// Only run if history is not busy
+	if(!histWorking) {
+		if (histIndex>0) {
+			// Tell updateHistory to ignore actions
+			histWorking = true;
+			// Callback ensures no other history can run before completion
+			canvas.loadFromJSON(histList[--histIndex], function() {
+				canvas.renderAll();
+				histWorking = false;
+			});
+			
+		}
+	}
+}
+
+function redo() {
+	// Only run if history is not busy
+	if(!histWorking) {
+		histLast = histList.length - 1;
+		if (histIndex<histLast) {
+			// Tell updateHistory to ignore actions
+			histWorking = true;
+			// Callback ensures no other history can run before completion
+			canvas.loadFromJSON(histList[++histIndex], function() {
+				canvas.renderAll();
+				histWorking = false;
+			});
+		}
+	}
+}
+
+
+
+/************************ WIP *************************/
+function shareToFb() {
+	// TODO: https://developers.facebook.com/docs/sharing/reference/share-dialog
+	// TODO: https://developers.facebook.com/docs/sharing/best-practices
+	// FB.ui({
+	// 	method: 'share',
+	// 	href: 'https://developers.facebook.com/docs/',
+	// }, function(response){});
+
+	// TODO: Implement friend checks when people visit that link, so that
+	// people can't just randomly try finding pages? 
+}
+
+
 
 
 
@@ -801,7 +850,7 @@ function initColPickers(){
 
 
 
-/************************ BOARD FUNCTIONS *************************/
+/************************ LOAD/SAVE/CLEAR *************************/
 function loadCanvas(){
 	// canvas.loadFromJSON(
 	// 	lastSave,							// Input data: load from lastSave
@@ -917,22 +966,22 @@ function preloadImage() {
 		$("#noPreview").show();
 	});
 }
-function addImage(){
-	var url = document.getElementById("imageHolder").src;
-	fabric.Image.fromURL(url, function(oImg){
-		if(oImg.getHeight()>oImg.getWidth()){
-			oImg.scale((canvas.getHeight()/oImg.getHeight())/2);
-		}else{
-			oImg.scale((canvas.getWidth()/oImg.getWidth())/2);
-		}
-		setDefSettings(oImg);
-		canvas.add(oImg);
-		oImg.center();
-		oImg.setCoords();
-		canvas.setActiveObject(oImg);
-	}, {crossOrigin: 'anonymous'});
-	$("#imagebox").overlay().close();
-}
+// function addImage(){
+// 	var url = document.getElementById("imageHolder").src;
+// 	fabric.Image.fromURL(url, function(oImg){
+// 		if(oImg.getHeight()>oImg.getWidth()){
+// 			oImg.scale((canvas.getHeight()/oImg.getHeight())/2);
+// 		}else{
+// 			oImg.scale((canvas.getWidth()/oImg.getWidth())/2);
+// 		}
+// 		setDefSettings(oImg);
+// 		canvas.add(oImg);
+// 		oImg.center();
+// 		oImg.setCoords();
+// 		canvas.setActiveObject(oImg);
+// 	}, {crossOrigin: 'anonymous'});
+// 	$("#imagebox").overlay().close();
+// }
 
 function clearHighlight() {
 	var obj = canvas.getActiveObject();
