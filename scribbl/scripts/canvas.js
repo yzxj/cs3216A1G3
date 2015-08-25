@@ -42,10 +42,17 @@ var	drawingModeEl,
 	undoEl,
 	redoEl,
 	clearEl,
-	downloadEl,
 	imageBtnEl;
 
-
+var pointer,
+	penTool,
+	eraserTool,
+	clearCan,
+	undoButton,
+	redoButton,
+	uploadButton,
+	textInput,
+	downloadEl;
 
 
 
@@ -79,28 +86,25 @@ var	drawingModeEl,
 	redoEl = $('redo-btn');
 	imageBtnEl = $('addimage');
 
-	downloadEl = $('download');
+	pointer 		= $('pointer');
+	penTool 		= $('pentool');
+	eraserTool 		= $('eraser');
+	clearCan 		= $('clearcanvas');
+	undoButton 		= $('undo');
+	redoButton 		= $('redo');
+	uploadButton 	= $('uploadimages');
+	textInput 		= $('inputtext');
+	downloadEl 		= $('download');
 
-	var pointer = $('pointer'),
-		penTool = $('pentool'),
-		eraserTool=$('eraser'),
-		clearCan=$('clearcanvas'),
-		undoButton=$('undo'),
-		redoButton=$('redo'),
-		uploadButton=$('uploadimages'),
-		textInput=$('inputtext');
-
-	pointer.onclick = disableDrawAndEraser;
-	textInput.onclick = addText;
-	penTool.onclick = drawingModeOn;
-	eraserTool.onclick = eraserModeOn;
-	clearCan.onclick = clearCanvas;
-	
-	undoButton.onclick = function(){ undo();}
-	redoButton.onclick = function(){ redo();}
-	uploadButton.onclick = openUploader;
-
-	downloadEl.onclick = downloadCanvas;
+	pointer.onclick 		= disableDrawAndEraser;
+	penTool.onclick 		= drawingModeOn;
+	eraserTool.onclick 		= eraserModeOn;
+	clearCan.onclick 		= clearCanvas;
+	undoButton.onclick 		= undo;
+	redoButton.onclick 		= redo;
+	uploadButton.onclick 	= openUploader;
+	textInput.onclick 		= addText;
+	downloadEl.onclick 		= downloadCanvas;
 
 	if (fabric.PatternBrush) {
 		var vLinePatternBrush = new fabric.PatternBrush(canvas);
@@ -481,6 +485,11 @@ function toggleEraserMode() {
 function eraserModeOn() {
 	drawingModeOff();
 
+	// if (!eraserTool.classList.contains("active")) {
+	// 	$('eraser').addClass("active");
+	// 	console.log(eraserTool);
+	// }
+
 	inEraserMode = true;
 	canvas.defaultCursor = 'cell';
 
@@ -493,6 +502,10 @@ function eraserModeOn() {
 
 function eraserModeOff() {
 	inEraserMode = false;
+
+	// if (eraserTool.classList.contains("active")) {
+	// 	$('eraser').removeClass("active");
+	// }
 
 	canvas.defaultCursor = 'default';
 
