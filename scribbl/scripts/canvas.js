@@ -42,7 +42,8 @@ var	drawingModeEl,
 	undoEl,
 	redoEl,
 	clearEl,
-	downloadEl;
+	downloadEl,
+	imageBtnEl;
 
 
 
@@ -81,6 +82,7 @@ var	drawingModeEl,
     undoEl = $('undo-btn');
     redoEl = $('redo-btn');
     downloadEl = $('download-btn');
+    imageBtnEl = $('addimage');
 
 
 	clearEl.onclick = clearCanvas;
@@ -89,6 +91,7 @@ var	drawingModeEl,
 	undoEl.onclick = undo;
 	redoEl.onclick = redo;
 	downloadEl.onclick = downloadCanvas;
+	imageBtnEl.onclick = uploadImage; // imageBox
 
 	if (fabric.PatternBrush) {
 		var vLinePatternBrush = new fabric.PatternBrush(canvas);
@@ -276,6 +279,13 @@ function toggleEraserMode(calledByUser) {
 	}
 }
 
+function disableDrawAndEraser() {
+	if (canvas.isDrawingMode) 
+		toggleDrawingMode();
+	else if (inEraserMode) 
+		toggleEraserMode();
+}
+
 
 function addCanvasListeners() {
 	canvas.on({
@@ -440,6 +450,7 @@ function downloadCanvas() {
 	var currBgCol = canvas.backgroundColor;
 	var currBgImg = canvas.backgroundImage;
 	canvas.setBackgroundColor('#FFFFFF');
+	canvas.discardActiveObject();
 	
 	// Create temp link and activate download
 	var link = document.createElement("a");
@@ -500,14 +511,21 @@ function updateHistory() {
 		histIndex++;
 	}
 	histList.push(JSON.stringify(canvas));
+	console.log(histList);
 }
 // A very hack-ish workaround to ensure consistent
 // behaviour of objects, esp. object types
 // i.e. always work with data loaded from save
 function loadCurr() {
 	histWorking = true;
-	canvas.loadFromJSON(histList[histIndex]);
+	var activeObj = canvas.getActiveObject();
+	//canvas.loadFromJSON(histList[histIndex]);
+	// Seems to work fine because eraser sets all as unselectable
+	// and then resets only non-path items as selectable, so 
+	// the call from onObjAdded is not actually as important.
+	// (but the pathcreated call still is)
 	canvas.renderAll();
+	if(activeObj) canvas.setActiveObject(activeObj);
 	histWorking = false;
 }
 function undo() {
@@ -525,8 +543,12 @@ function redo() {
 		// Tell updateHistory to ignore actions
 		histWorking = true;
 		canvas.loadFromJSON(histList[++histIndex]);
+		// TODO: Fix issue with image repeating undoHistory
+		// Tried callbacks, but callbacks cause bugs
+		// if used too fast (callbacks not done)
 		canvas.renderAll();
 		histWorking = false;
+		// HISTWORKIG IS A LOUSY SEMAPHORE
 	}
 }
 
@@ -534,6 +556,57 @@ function canvasLastObj() {
 	return canvas._objects[canvas._objects.length-1];
 }
 
+
+
+function shareToFb() {
+	// TODO: https://developers.facebook.com/docs/sharing/reference/share-dialog
+	// TODO: https://developers.facebook.com/docs/sharing/best-practices
+	// FB.ui({
+	// 	method: 'share',
+	// 	href: 'https://developers.facebook.com/docs/',
+	// }, function(response){});
+
+	// TODO: Implement friend checks when people visit that link, so that
+	// people can't just randomly try finding pages? 
+}
+
+var uploader;
+function uploadImage() {
+	uploader = document.createElement("input");
+	uploader.type = 'file';
+	uploader.accept = 'image/*';
+	uploader.multiple = false;		// TODO: Consider allowing multiple
+	uploader.onchange = readImage;
+	uploader.click();
+}
+
+function readImage(element) {
+	var newImgDataUrl = "";
+	var file = uploader.files[0];
+	var reader  = new FileReader();
+
+	reader.onloadend = function() {
+		fabric.Image.fromURL(reader.result, function(img){
+			if(img.getHeight()>img.getWidth()){
+				img.scale((canvas.getHeight()/img.getHeight())/2);
+			}else{
+				img.scale((canvas.getWidth()/img.getWidth())/2);
+			}
+			img.set("left", canvas.getWidth()/2);
+			img.set("top", canvas.getHeight()/2);
+			setDefSettings(img); // TODO: check if necessary
+			canvas.add(img);
+
+			disableDrawAndEraser();
+			canvas.setActiveObject(img);
+		});
+	}
+
+	if (file) {
+		reader.readAsDataURL(file);
+	}
+	uploader.removeAttribute("onchange");
+}
 
 
 
@@ -728,8 +801,7 @@ function setDefSettings(curr){	// *** consider adding these features to toJSON(o
 		curr.set({minScaleLimit: 10.0/curr.width});
 }
 function addText() {
-	if(canvas.isDrawingMode) toggleDrawingMode();
-	else if(inEraserMode) toggleEraserMode();
+	disableDrawAndEraser();
 
 	var input = document.getElementById("newtext");
 	var text = input.value;
