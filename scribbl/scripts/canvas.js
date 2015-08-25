@@ -319,6 +319,12 @@ function addWindowListeners() {
 					e.preventDefault();
 					break;
 			}
+		} else {
+			switch(e.which) {
+				case 46: // del
+					deleteActiveObj();
+					break;
+			}
 		}
 	});
 	// window.onbeforeunload = function(e){	// Page-leave functionality
@@ -524,31 +530,42 @@ function loadCurr() {
 	// and then resets only non-path items as selectable, so 
 	// the call from onObjAdded is not actually as important.
 	// (but the pathcreated call still is)
+	// TODO: REMOVE
 	canvas.renderAll();
 	if(activeObj) canvas.setActiveObject(activeObj);
 	histWorking = false;
 }
 function undo() {
-	if (histIndex>0) {
-		// Tell updateHistory to ignore actions
-		histWorking = true;
-		canvas.loadFromJSON(histList[--histIndex]);
-		canvas.renderAll();
-		histWorking = false;
+	if(!histWorking) {
+		if (histIndex>0) {
+			// Tell updateHistory to ignore actions
+			histWorking = true;
+			canvas.loadFromJSON(histList[--histIndex], function() {
+				canvas.renderAll();
+				histWorking = false;
+			});
+			
+		}
 	}
 }
 function redo() {
-	histLast = histList.length - 1;
-	if (histIndex<histLast) {
-		// Tell updateHistory to ignore actions
-		histWorking = true;
-		canvas.loadFromJSON(histList[++histIndex]);
-		// TODO: Fix issue with image repeating undoHistory
-		// Tried callbacks, but callbacks cause bugs
-		// if used too fast (callbacks not done)
-		canvas.renderAll();
-		histWorking = false;
-		// HISTWORKIG IS A LOUSY SEMAPHORE
+	if(!histWorking) {
+		histLast = histList.length - 1;
+		if (histIndex<histLast) {
+			// Tell updateHistory to ignore actions
+			histWorking = true;
+			// canvas.loadFromJSON(histList[++histIndex]);
+			// // TODO: Fix issue with image repeating undoHistory
+			// // Tried callbacks, but callbacks cause bugs
+			// // if used too fast (callbacks not done)
+			// canvas.renderAll();
+			canvas.loadFromJSON(histList[++histIndex], function() {
+				canvas.renderAll();
+				histWorking = false;
+			});
+			// histWorking = false;
+			// HISTWORKIG IS A LOUSY SEMAPHORE
+		}
 	}
 }
 
@@ -556,7 +573,10 @@ function canvasLastObj() {
 	return canvas._objects[canvas._objects.length-1];
 }
 
-
+function deleteActiveObj() {
+	canvas.remove(canvas.getActiveObject());
+	canvas.discardActiveObject();
+}
 
 function shareToFb() {
 	// TODO: https://developers.facebook.com/docs/sharing/reference/share-dialog
