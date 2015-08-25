@@ -61,16 +61,12 @@ var	drawingModeEl,
 
 	addCanvasListeners();
 	addWindowListeners();
-	resetInfoWin();
 	//promptBoardEmpty();
 	initColPickers();
 	initHistory();
 
-	/***** Sets up Free Drawing *****/
-
 	fabric.Object.prototype.transparentCorners = false;
 
-	drawingModeEl = $('drawing-mode'),
 	drawingOptionsEl = $('drawing-mode-options'),
 	drawingColorEl = $('drawing-color'),
 	drawingShadowColorEl = $('drawing-shadow-color'),
@@ -81,11 +77,12 @@ var	drawingModeEl,
 	clearEl = $('clear-canvas');
 	undoEl = $('undo-btn');
 	redoEl = $('redo-btn');
-	downloadEl = $('download-btn');
 	imageBtnEl = $('addimage');
 
+	downloadEl = $('download');
 
-	var penTool = $('pentool'),
+	var pointer = $('pointer'),
+		penTool = $('pentool'),
 		eraserTool=$('eraser'),
 		clearCan=$('clearcanvas'),
 		undoButton=$('undo'),
@@ -93,36 +90,17 @@ var	drawingModeEl,
 		uploadButton=$('uploadimages'),
 		textInput=$('inputtext');
 
-	textInput.onclick=function(){
-		addText();
-	}
-
-
-	penTool.onclick = function(){
-		toggleDrawingMode();
-	}
-
-	eraserTool.onclick = function(){
-		toggleEraserMode();
-
-	}
-
-	// clearCan.Click(function(){clearCanvas();});
-	clearCan.onclick =function() { clearCanvas();
-
-	}
+	pointer.onclick = disableDrawAndEraser;
+	textInput.onclick = addText;
+	penTool.onclick = drawingModeOn;
+	eraserTool.onclick = eraserModeOn;
+	clearCan.onclick = clearCanvas;
+	
 	undoButton.onclick = function(){ undo();}
 	redoButton.onclick = function(){ redo();}
 	uploadButton.onclick = openUploader;
 
-
-	clearEl.onclick = clearCanvas;
-	drawingModeEl.onclick = toggleDrawingMode;
-	eraserModeEl.onclick = toggleEraserMode;
-	undoEl.onclick = undo;
-	redoEl.onclick = redo;
 	downloadEl.onclick = downloadCanvas;
-	imageBtnEl.onclick = openUploader; // imageBox
 
 	if (fabric.PatternBrush) {
 		var vLinePatternBrush = new fabric.PatternBrush(canvas);
@@ -230,29 +208,17 @@ var	drawingModeEl,
 		if (canvas.freeDrawingBrush) {
 			canvas.freeDrawingBrush.color = drawingColorEl.value;
 			canvas.freeDrawingBrush.width = parseInt(drawingLineWidthEl.value, 10) || 1;
-			canvas.freeDrawingBrush.shadowBlur = parseInt(drawingShadowWidth.value, 10) || 0;
 		}
 	};
 
 	drawingColorEl.onchange = function() {
 		canvas.freeDrawingBrush.color = this.value;
 	};
-	drawingShadowColorEl.onchange = function() {
-		canvas.freeDrawingBrush.shadowColor = this.value;
-	};
 	drawingLineWidthEl.onchange = function() {
 		canvas.freeDrawingBrush.width = parseInt(this.value, 10) || 1;
 		this.previousSibling.innerHTML = this.value;
 	};
-	drawingShadowWidth.onchange = function() {
-		canvas.freeDrawingBrush.shadowBlur = parseInt(this.value, 10) || 0;
-		this.previousSibling.innerHTML = this.value;
-	};
-	drawingShadowOffset.onchange = function() {
-		canvas.freeDrawingBrush.shadowOffsetX =
-		canvas.freeDrawingBrush.shadowOffsetY = parseInt(this.value, 10) || 0;
-		this.previousSibling.innerHTML = this.value;
-	};
+
 
 	if (canvas.freeDrawingBrush) {
 		canvas.freeDrawingBrush.color = drawingColorEl.value;
@@ -445,7 +411,7 @@ function onObjSelected(e) {
 		scaleY: orig.getScaleY(),
 		angle: orig.getAngle(),
 	};
-	switchTab();
+	//switchTab();
 	//updateInfoWin(orig);
 }
 
@@ -454,10 +420,10 @@ function onPathCreated(e) {
 }
 
 function onSelectionCleared() {
-	if (!canvas.isDrawingMode) {
-		resetInfoWin();
-		switchTab("create");
-	}
+	// if (!canvas.isDrawingMode) {
+	// 	resetInfoWin();
+	// 	switchTab("create");
+	// }
 }
 
 function onMouseDown(ev) {
@@ -495,17 +461,11 @@ function drawingModeOn() {
 	eraserModeOff();
 	
 	canvas.isDrawingMode = true;
-	drawingModeEl.innerHTML = 'Stop Drawing';
-	drawingOptionsEl.style.display = '';
-
 	canvas.discardActiveObject();
 }
 
 function drawingModeOff() {
 	canvas.isDrawingMode = false;
-
-	drawingModeEl.innerHTML = 'Draw';
-	drawingOptionsEl.style.display = 'none';
 }
 
 
@@ -522,7 +482,6 @@ function eraserModeOn() {
 	drawingModeOff();
 
 	inEraserMode = true;
-	eraserModeEl.innerHTML = 'Stop Erasing';
 	canvas.defaultCursor = 'cell';
 
 	canvas.discardActiveObject();
@@ -535,7 +494,6 @@ function eraserModeOn() {
 function eraserModeOff() {
 	inEraserMode = false;
 
-	eraserModeEl.innerHTML = 'Eraser';
 	canvas.defaultCursor = 'default';
 
 	canvas.forEachObject(function(o) {
@@ -881,7 +839,6 @@ function clearCanvas(){
 	var resp=confirm("Are you sure? This will clear everything!");
 	if (resp){
 		canvas.clear();
-		isSaved = false;
 	}
 }
 
@@ -923,49 +880,23 @@ function addText() {
 	canvas.setActiveObject(canvasLastObj());
 	isSaved = false;
 }
-// function addPostIt(){
-// 	var bgcolor = blkcolor;
-// 	var txtcolor = fntcolor;
-// 	var input = document.getElementById("newtext");
-// 	var text = input.value;
-// 	if(text == null || text.trim() == ""){
-// 		text = "Click to edit";
-// 	}
-// 	var newText = new fabric.IText(text);
-// 	newText.fontSize = 30;
-// 	newText.backgroundColor = bgcolor;
-// 	newText.fill = txtcolor;
-// 	newText.paddingX = 10;
-// 	newText.paddingY = 20;
-// 	newText.scaleX = 0.6;
-// 	newText.scaleY = 0.6;
-// 	newText.lockUniScaling = true;
-// 	newText.postit = true;
-// 	newText.darkerShade = tinycolor.darken(bgcolor, 30).toHexString();
-// 	canvas.add(newText);
-// 	setDefSettings(newText);
-// 	newText.center();
-// 	newText.setCoords();
-// 	canvas.setActiveObject(newText);
-// 	isSaved = false;
-// }
 
 // IMAGE FUNCTIONS
-function imageBox(e) {
-	$("#imagebox").overlay().load();
-}
-function preloadImage() {
-	var url = document.getElementById("imageurl").value;
-	var image = document.getElementById("imageHolder");
-	// image.crossOrigin = 'anonymous';
-	image.src = url;
-	$("#noPreview").hide();
-	$("#imageHolder").show();
-	$("img").error(function(){
-		$(this).hide();
-		$("#noPreview").show();
-	});
-}
+// function imageBox(e) {
+// 	$("#imagebox").overlay().load();
+// }
+// function preloadImage() {
+// 	var url = document.getElementById("imageurl").value;
+// 	var image = document.getElementById("imageHolder");
+// 	// image.crossOrigin = 'anonymous';
+// 	image.src = url;
+// 	$("#noPreview").hide();
+// 	$("#imageHolder").show();
+// 	$("img").error(function(){
+// 		$(this).hide();
+// 		$("#noPreview").show();
+// 	});
+// }
 // function addImage(){
 // 	var url = document.getElementById("imageHolder").src;
 // 	fabric.Image.fromURL(url, function(oImg){
@@ -982,12 +913,6 @@ function preloadImage() {
 // 	}, {crossOrigin: 'anonymous'});
 // 	$("#imagebox").overlay().close();
 // }
-
-function clearHighlight() {
-	var obj = canvas.getActiveObject();
-	setActiveStyle("textBackgroundColor", 'clear');
-}
-
 
 
 
@@ -1100,52 +1025,55 @@ function toggleOverline() {
 
 	setActiveStyle('textDecoration', value);
 }
-
+function clearHighlight() {
+	var obj = canvas.getActiveObject();
+	setActiveStyle("textBackgroundColor", 'clear');
+}
 
 
 
 
 
 /************************ TAB-RELATED *************************/
-function switchTab(tab){
-	if (tab == "create") {
-		$("#myTab > .active").removeClass("active");
-		$("#myTabContent > .active").removeClass("active");
-		$("#newObjTab").addClass("active");
-		$("#createobjects").addClass("in active");
-	} else {
-		$("#myTab > .active").removeClass("active");
-		$("#myTabContent > .active").removeClass("active");
-		$("#currObjTab").addClass("active");
-		$("#modifycurrent").addClass("in active");
-	}
-}
-function updateInfoWin(curr){
-	// Change fields for infowin
-	var activeObj = canvas.getActiveObject();
-	if(activeObj){
-		if(activeObj.type=='i-text'){
-			activeObj.lockUniScaling = true;
-			document.getElementById("fontSize").value = activeObj.fontSize;
-			document.getElementById("strokeWidth").value = activeObj.strokeWidth;
-			document.getElementById("itext-controls").style.display = "block";
-			if(activeObj.getStroke()) $('#stroke').colpickSetColor(activeObj.getStroke(), true);
-			else $('#stroke').colpickSetColor('#ffffff', true)
-		}else{
-			document.getElementById("itext-controls").style.display = "none";
-			$('#fillColor').colpickSetColor(activeObj.getFill(),true);
-		}
-	}
-}
+// function switchTab(tab){
+// 	if (tab == "create") {
+// 		$("#myTab > .active").removeClass("active");
+// 		$("#myTabContent > .active").removeClass("active");
+// 		$("#newObjTab").addClass("active");
+// 		$("#createobjects").addClass("in active");
+// 	} else {
+// 		$("#myTab > .active").removeClass("active");
+// 		$("#myTabContent > .active").removeClass("active");
+// 		$("#currObjTab").addClass("active");
+// 		$("#modifycurrent").addClass("in active");
+// 	}
+// }
+// function updateInfoWin(curr){
+// 	// Change fields for infowin
+// 	var activeObj = canvas.getActiveObject();
+// 	if(activeObj){
+// 		if(activeObj.type=='i-text'){
+// 			activeObj.lockUniScaling = true;
+// 			document.getElementById("fontSize").value = activeObj.fontSize;
+// 			document.getElementById("strokeWidth").value = activeObj.strokeWidth;
+// 			document.getElementById("itext-controls").style.display = "block";
+// 			if(activeObj.getStroke()) $('#stroke').colpickSetColor(activeObj.getStroke(), true);
+// 			else $('#stroke').colpickSetColor('#ffffff', true)
+// 		}else{
+// 			document.getElementById("itext-controls").style.display = "none";
+// 			$('#fillColor').colpickSetColor(activeObj.getFill(),true);
+// 		}
+// 	}
+// }
 function toTwoDP(num){
 	return Math.round(num*100)/100;
 }
-function resetInfoWin(){
-	// Deselect effects
-	atLimit=null;
-	orig=null;
-	document.getElementById("itext-controls").style.display = "none";
-}
+// function resetInfoWin(){
+// 	// Deselect effects
+// 	atLimit=null;
+// 	orig=null;
+// 	document.getElementById("itext-controls").style.display = "none";
+// }
 
 
 
