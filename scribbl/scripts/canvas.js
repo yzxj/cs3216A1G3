@@ -68,6 +68,7 @@ var pointer,
 
 	addCanvasListeners();
 	addWindowListeners();
+	resizeCanvas();
 	//promptBoardEmpty();
 	initColPickers();
 	initHistory();
@@ -350,6 +351,7 @@ function addWindowListeners() {
 			}
 		}
 	});
+	window.addEventListener('resize', resizeCanvas, false);
 	// window.onbeforeunload = function(e){	// Page-leave functionality
 	// 	if(!isSaved)
 	// 		saveCanvas(false);
@@ -447,7 +449,6 @@ function onMouseUp(ev) {
 		erase(ev);
 	}
 }
-
 
 
 
@@ -702,6 +703,26 @@ function downloadCanvas() {
 	else
 		canvas.setBackgroundColor(null);
 	canvas.renderAll();
+}
+
+/** RESIZE CODE FROM http://htmlcheats.com/html/resize-the-html5-canvas-dyamically/ **/
+// Display custom canvas.
+// In this case it's a blue, 5 pixel border that 
+// resizes along with the browser window.					
+// function redraw() {
+// 	context.strokeStyle = 'blue';
+// 	context.lineWidth = '5';
+// 	context.strokeRect(0, 0, window.innerWidth, window.innerHeight);
+// }
+
+// Runs each time the DOM window resize event fires.
+// Resets the canvas dimensions to match window,
+// then draws the new borders accordingly.
+function resizeCanvas() {
+	canvas.setWidth(window.innerWidth - 120 - 20 - 12);
+	canvas.setHeight(window.innerHeight - 250);
+	console.log($('sidebar').width());
+	canvas.calcOffset();
 }
 
 

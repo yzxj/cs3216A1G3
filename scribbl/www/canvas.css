@@ -11,10 +11,14 @@
 }
 #pinboard {
   position: relative;
+
+}
+
+#canvasContainer {
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAKUlEQVQYV2NkIA4YMxKnjoH6ChmItZpohdR3I9Emgt1ojBSWZ6FsDDEAO/0DPTDnTssAAAAASUVORK5CYII=);
   border-style: solid;
   border-width: 5px;
   border-color: #008080;
-  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAKUlEQVQYV2NkIA4YMxKnjoH6ChmItZpohdR3I9Emgt1ojBSWZ6FsDDEAO/0DPTDnTssAAAAASUVORK5CYII=);
 }
 
 #noPreview, #bgnoPreview {
@@ -72,8 +76,10 @@ input[type=range] {
 }
 #sidebarmenu{
   list-style-type: none;
-  padding-left:20px;
+  padding-left: 20px;
+  padding-right: 20px;
   margin-left: 0px;
+  width: 120px;
 }
 
 #sidebarmenu li button{
