@@ -74,7 +74,8 @@ var pointer,
 	initHistory();
 
 	fabric.Object.prototype.transparentCorners = false;
-
+	fabric.Object.prototype.perPixelTargetFind = true;
+ 
 	drawingOptionsEl = $('drawing-mode-options'),
 	drawingColorEl = $('drawing-color'),
 	drawingShadowColorEl = $('drawing-shadow-color'),
