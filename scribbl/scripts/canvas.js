@@ -464,13 +464,17 @@ function toggleDrawingMode() {
 
 function drawingModeOn() {
 	eraserModeOff();
-	
+	if($("#pentool").hasClass("normal")){
+	removeHightlight();
+	$("#pentool").removeClass("normal").addClass("highlight");
+	}
 	canvas.isDrawingMode = true;
 	canvas.discardActiveObject();
 }
 
 function drawingModeOff() {
 	canvas.isDrawingMode = false;
+	
 }
 
 
@@ -485,11 +489,10 @@ function toggleEraserMode() {
 
 function eraserModeOn() {
 	drawingModeOff();
-
-	// if (!eraserTool.classList.contains("active")) {
-	// 	$('eraser').addClass("active");
-	// 	console.log(eraserTool);
-	// }
+	if($("#eraser").hasClass("normal")){
+	removeHightlight();
+	$("#eraser").removeClass("normal").addClass("highlight");
+	}
 
 	inEraserMode = true;
 	canvas.defaultCursor = 'cell';
@@ -501,12 +504,9 @@ function eraserModeOn() {
 	});
 }
 
-function eraserModeOff() {
-	inEraserMode = false;
-
-	// if (eraserTool.classList.contains("active")) {
-	// 	$('eraser').removeClass("active");
-	// }
+	function eraserModeOff() {
+		inEraserMode = false;
+		
 
 	canvas.defaultCursor = 'default';
 
@@ -519,6 +519,10 @@ function eraserModeOff() {
 function disableDrawAndEraser() {
 	drawingModeOff();
 	eraserModeOff();
+	if($("#pointer").hasClass("normal")){
+	removeHightlight();
+	$("#pointer").removeClass("normal").addClass("highlight");
+	}
 }
 
 var erasing = false;
@@ -682,6 +686,7 @@ function deleteActiveObj() {
 }
 
 function downloadCanvas() {
+	removeHightlight();
 	// Normally transparent because default dataURL is .png
 	var currBgCol = canvas.backgroundColor;
 	var currBgImg = canvas.backgroundImage;
@@ -703,6 +708,7 @@ function downloadCanvas() {
 	else
 		canvas.setBackgroundColor(null);
 	canvas.renderAll();
+	changeHighlight();
 }
 
 /** RESIZE CODE FROM http://htmlcheats.com/html/resize-the-html5-canvas-dyamically/ **/
@@ -766,37 +772,58 @@ function updateHistory() {
 	histList.push(JSON.stringify(canvas));
 }
 
-function undo() {
-	// Only run if history is not busy
-	if(!histWorking) {
-		if (histIndex>0) {
-			// Tell updateHistory to ignore actions
-			histWorking = true;
-			// Callback ensures no other history can run before completion
-			canvas.loadFromJSON(histList[--histIndex], function() {
-				canvas.renderAll();
-				histWorking = false;
-			});
-			
-		}
-	}
-}
+	function undo() {
+		// Only run if history is not busy
+		if(!histWorking) {
+			if (histIndex>0) {
+				// Tell updateHistory to ignore actions
+				histWorking = true;
+				// Callback ensures no other history can run before completion
+				canvas.loadFromJSON(histList[--histIndex], function() {
+					canvas.renderAll();
+					histWorking = false;
+				});
 
-function redo() {
-	// Only run if history is not busy
-	if(!histWorking) {
-		histLast = histList.length - 1;
-		if (histIndex<histLast) {
-			// Tell updateHistory to ignore actions
-			histWorking = true;
-			// Callback ensures no other history can run before completion
-			canvas.loadFromJSON(histList[++histIndex], function() {
-				canvas.renderAll();
-				histWorking = false;
-			});
+			}
 		}
 	}
-}
+
+	function removeHightlight(){
+		$("#sidebarmenu").find(":button").each(function(){
+			if($(this).hasClass("highlight")){
+				$(this).removeClass("highlight").addClass("normal");
+			}			
+		})
+		
+	}
+
+	// function changeHighlight(){
+	// 		if(canvas.isDrawingMode && $("#pentool").hasClass("normal")){
+	// 		$("#pentool").removeClass("normal").addClass("highlight");
+	// 		}
+	// 		else if(inEraserMode && $("#eraser").hasClass("normal")){
+	// 		$("#eraser").removeClass("normal").addClass("highlight");
+	// 		}
+	// 		else{
+	// 		$("#pointer").removeClass("normal").addClass("highlight");
+	// 		}
+	// }
+
+	function redo() {
+		// Only run if history is not busy
+		if(!histWorking) {
+			histLast = histList.length - 1;
+			if (histIndex<histLast) {
+				// Tell updateHistory to ignore actions
+				histWorking = true;
+				// Callback ensures no other history can run before completion
+				canvas.loadFromJSON(histList[++histIndex], function() {
+					canvas.renderAll();
+					histWorking = false;
+				});
+			}
+		}
+	}
 
 
 
@@ -869,12 +896,12 @@ function saveCanvas(wAlert){
 	// 	alert("Successfully saved!");
 	// isSaved = true;
 }
-function clearCanvas(){
-	var resp=confirm("Are you sure? This will clear everything!");
-	if (resp){
-		canvas.clear();
+	function clearCanvas(){
+		var resp=confirm("Are you sure? This will clear everything!");
+		if (resp){
+			canvas.clear();
+		}
 	}
-}
 
 
 
